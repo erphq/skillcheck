@@ -6,6 +6,27 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-01
+
+### Added
+- `--fix` mode for safe auto-corrections. Today the only fix applied
+  is `name-drift`: rewrite the YAML frontmatter `name:` to match the
+  file's basename. The fix is conservative on purpose - it only acts
+  on rules with one obvious answer; everything else is left for the
+  human and reported as `skipped`.
+- `--fix-dry-run` companion flag that reports the same outcome
+  without writing to disk.
+- Plugin API. Pass `--plugin <path-or-specifier>` (repeatable) to
+  load a module that default-exports a `SkillcheckPlugin`
+  (`{ name, rules: [{ id, severity?, check }] }`). Plugin rules see
+  the same `parsed` / `validated` / `config` the built-in checks do.
+  A rule that throws is converted into an error diagnostic tagged
+  with the plugin's `name/id` so a buggy plugin can't take down the
+  whole run.
+- `applyFixes`, `loadPlugins`, `runPlugins`, and the `Plugin*` types
+  exported from the package entry point so plugin authors can write
+  against the same surface CLI consumers see.
+
 ## [0.5.0] - 2026-05-01
 
 ### Added
