@@ -8,7 +8,7 @@ import { reportText, reportJson } from "./report.js";
 import { reportSarif } from "./sarif.js";
 import type { Diagnostic, ParsedSkill } from "./types.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.5.0";
 
 interface CliOpts {
   strict?: boolean;

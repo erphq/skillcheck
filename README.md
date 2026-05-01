@@ -59,7 +59,13 @@ selected but failing silently.
 
 ## ✦ Install
 
-Until v0.1 publishes to npm:
+```bash
+npm install -g skillcheck
+# or one-shot, no install:
+npx skillcheck
+```
+
+To run from source:
 
 ```bash
 git clone https://github.com/erphq/skillcheck && cd skillcheck
@@ -67,13 +73,10 @@ npm install && npm run build
 node dist/cli.js
 ```
 
-Once published:
-
-```bash
-npm install -g skillcheck
-# or one-shot:
-npx skillcheck
-```
+Cutting a release: tag and create a GitHub Release named `vX.Y.Z`
+matching `package.json`'s `version`. The `release.yml` workflow runs
+the full lint + build + test pipeline, then `npm publish --provenance`
+using the `NPM_TOKEN` repo secret.
 
 ## ✦ Usage
 
@@ -230,7 +233,7 @@ collide on triggers? Stylistic checks belong upstream of `skillcheck`.
 - [x] v0.2 — MCP server ref check
 - [x] v0.3 — description collision detector (Jaccard ≥ 0.6)
 - [x] v0.4 — SARIF 2.1.0 output for GitHub Code Scanning
-- [ ] v0.5 — npm publish + release workflow
+- [x] v0.5 — npm publish + GitHub Actions release workflow (`--provenance`); CHANGELOG.md
 - [ ] v0.6 — `--fix` mode for safe auto-corrections; plugin API
 - [ ] v1.0 — used by `erphq/skills` in CI; documented schema versioned independently
 
