@@ -18,28 +18,11 @@ against a schema, checks every referenced tool / MCP server actually
 resolves, scores description-trigger collisions across a skill set, and
 warns about authoring pitfalls Claude won't tell you about at runtime.
 
-> **The thesis.** Skills are an authoring surface, not a runtime. The
-> runtime is opaque - you only find out a skill is broken when an agent
-> silently picks the wrong one, or invokes a tool that no longer exists,
-> or skips your skill entirely because three other skills described the
-> same trigger. `skillcheck` makes the loop fast and pre-flight: parse
-> the manifest, walk the references, score the collisions, fail CI.
+## Why
 
----
+Skills are an authoring surface. The runtime that consumes them is opaque: an author finds out a skill is broken when an agent silently picks the wrong one, invokes a tool that no longer exists, or skips the skill entirely because three other skills described the same trigger. None of those signals come back through the model output, so the only feedback channel an author normally has is end-to-end testing against a real model, which costs a network round-trip and a billing line per check.
 
-## ✦ Why a linter, not a runtime tester
-
-Two reasons.
-
-**Runtime testing is slow and expensive.** End-to-end testing a skill
-means running a real model against real prompts and observing what gets
-selected. That's a network round-trip and a billing line per check. A
-linter runs in milliseconds, finds 80% of the bugs, and costs nothing.
-
-**The runtime is opaque.** Claude won't tell you "I almost picked your
-skill but the description was ambiguous, so I picked the other one." It
-just does. Static checks are the only way to surface authoring problems
-before they hide in production.
+Static analysis closes that gap. Parse the manifest, walk the references, score the description collisions, and fail CI. Catches roughly 80% of the bugs in milliseconds for free.
 
 ## ✦ The bugs `skillcheck` catches
 
@@ -53,9 +36,7 @@ before they hide in production.
 | MCP tool string typo (`mcp__githhub__...`) | Skill invokes ghost tool | Error |
 | MCP server not configured | Skill works for author, breaks for users | Warn |
 
-Every one of these is an actual bug we've seen. None show up in the
-model output - they show up as the skill not being selected, or being
-selected but failing silently.
+Every one of these is an actual bug we've seen. None show up in the model output. They show up as the skill not being selected, or being selected and then failing silently.
 
 ## ✦ Install
 
