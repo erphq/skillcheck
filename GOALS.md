@@ -23,8 +23,8 @@ default tool in `erphq/skills` and adopted by ≥3 external skill repos.
 ## Non-goals
 - Runtime evaluation of skills (no LLM calls)
 - Auto-generating skills from descriptions
-- Auth / sandboxing — that's the runtime's job
+- Auth / sandboxing - that's the runtime's job
 
 ## Out of scope (for now)
-- Plugin authoring (commands, hooks) — separate tool
-- VS Code extension — defer until v1
+- Plugin authoring (commands, hooks) - separate tool
+- VS Code extension - defer until v1

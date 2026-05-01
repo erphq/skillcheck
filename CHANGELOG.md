@@ -6,14 +6,14 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## [0.5.0] — 2026-05-01
+## [0.5.0] - 2026-05-01
 
 ### Added
 - `release.yml` GitHub Actions workflow that publishes to npm on a
   GitHub Release. Reads `NPM_TOKEN` from repo secrets.
 - This `CHANGELOG.md`.
 
-## [0.4.0] — 2026-04-30
+## [0.4.0] - 2026-04-30
 
 ### Added
 - SARIF 2.1.0 reporter (`--format sarif`). Static rule catalog with
@@ -21,20 +21,20 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   by GitHub Code Scanning's `upload-sarif` action.
 - New `RULES` export listing every rule the analyzer can emit.
 
-## [0.3.0] — 2026-04-30
+## [0.3.0] - 2026-04-30
 
 ### Added
 - Description-collision detector: flags pairs of skills whose
   descriptions overlap on token-set Jaccard ≥ 0.6.
 
-## [0.2.0] — 2026-04-30
+## [0.2.0] - 2026-04-30
 
 ### Added
 - MCP server reference check: warns when a skill's `tools:` array
   references an MCP server not configured in any reachable
   `settings.json` (`~/.claude/`, project root, project local).
 
-## [0.1.0] — 2026-04-30
+## [0.1.0] - 2026-04-30
 
 ### Added
 - TypeScript package with frontmatter-schema validation via `zod`.

@@ -22,7 +22,7 @@ export function reportText(diagnostics: Diagnostic[], cwd: string): string {
           : d.severity === "warn"
             ? pc.yellow("warn ")
             : pc.cyan("info ");
-      lines.push(`  ${sev} ${pc.dim(d.rule)} — ${d.message}`);
+      lines.push(`  ${sev} ${pc.dim(d.rule)} - ${d.message}`);
     }
     lines.push("");
   }

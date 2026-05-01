@@ -19,7 +19,7 @@ resolves, scores description-trigger collisions across a skill set, and
 warns about authoring pitfalls Claude won't tell you about at runtime.
 
 > **The thesis.** Skills are an authoring surface, not a runtime. The
-> runtime is opaque — you only find out a skill is broken when an agent
+> runtime is opaque - you only find out a skill is broken when an agent
 > silently picks the wrong one, or invokes a tool that no longer exists,
 > or skips your skill entirely because three other skills described the
 > same trigger. `skillcheck` makes the loop fast and pre-flight: parse
@@ -54,7 +54,7 @@ before they hide in production.
 | MCP server not configured | Skill works for author, breaks for users | Warn |
 
 Every one of these is an actual bug we've seen. None show up in the
-model output — they show up as the skill not being selected, or being
+model output - they show up as the skill not being selected, or being
 selected but failing silently.
 
 ## ✦ Install
@@ -125,15 +125,15 @@ fresh checkout).
 
 ```text
 skills/deploy.md
-  warn  description-collision — description overlaps with 'release' (Jaccard 0.71)
-  warn  description-length — description is 612 chars (>500)
+  warn  description-collision - description overlaps with 'release' (Jaccard 0.71)
+  warn  description-length - description is 612 chars (>500)
 
 skills/release.md
-  warn  description-collision — description overlaps with 'deploy' (Jaccard 0.71)
+  warn  description-collision - description overlaps with 'deploy' (Jaccard 0.71)
 
 skills/typo.md
-  error frontmatter-schema — name: name is required
-  warn  tool-unknown — tool 'BashShell' is not a known built-in Claude Code tool
+  error frontmatter-schema - name: name is required
+  warn  tool-unknown - tool 'BashShell' is not a known built-in Claude Code tool
 
 1 error, 4 warnings, 0 info
 ```
@@ -147,7 +147,7 @@ Two-line GitHub Actions step:
 - run: cat skillcheck.json | jq '.diagnostics[] | select(.severity=="error")'
 ```
 
-Or simpler — fail the build on any warning:
+Or simpler - fail the build on any warning:
 
 ```yaml
 - run: npx skillcheck --strict
@@ -186,7 +186,7 @@ Useful for piping into your own reporters, custom checks, or test suites.
 
 | Anti-pattern | Why it's bad |
 |---|---|
-| Description that's a multi-paragraph essay | Claude has to read all skill descriptions every turn — long ones get skimmed |
+| Description that's a multi-paragraph essay | Claude has to read all skill descriptions every turn - long ones get skimmed |
 | Two skills both described as "use this when working on X" | Selection is non-deterministic; one of them never fires |
 | `tools: [Read, Edit, Bash, Write, ...]` (everything) | Defeats the purpose of `tools:`; signals the author didn't think about scope |
 | `name: my-skill` in `skills/different/different-skill.md` | Skill name resolution diverges from file path |
@@ -212,7 +212,7 @@ when Anthropic ships a new tool.
 A: For now, fork. v0.5 will expose a plugin API.
 
 **Q: What about skills inside plugin directories?**
-A: They work — point `skillcheck` at the directory. Plugin-namespaced
+A: They work - point `skillcheck` at the directory. Plugin-namespaced
 skills (`plugin:skill`) aren't validated against plugin manifests yet.
 
 **Q: SARIF support?**
@@ -228,14 +228,14 @@ collide on triggers? Stylistic checks belong upstream of `skillcheck`.
 
 ## ✦ Roadmap
 
-- [x] v0.0 — scaffold, schema, structure
-- [x] v0.1 — frontmatter schema + tool ref check + tests
-- [x] v0.2 — MCP server ref check
-- [x] v0.3 — description collision detector (Jaccard ≥ 0.6)
-- [x] v0.4 — SARIF 2.1.0 output for GitHub Code Scanning
-- [x] v0.5 — npm publish + GitHub Actions release workflow (`--provenance`); CHANGELOG.md
-- [ ] v0.6 — `--fix` mode for safe auto-corrections; plugin API
-- [ ] v1.0 — used by `erphq/skills` in CI; documented schema versioned independently
+- [x] v0.0 - scaffold, schema, structure
+- [x] v0.1 - frontmatter schema + tool ref check + tests
+- [x] v0.2 - MCP server ref check
+- [x] v0.3 - description collision detector (Jaccard ≥ 0.6)
+- [x] v0.4 - SARIF 2.1.0 output for GitHub Code Scanning
+- [x] v0.5 - npm publish + GitHub Actions release workflow (`--provenance`); CHANGELOG.md
+- [ ] v0.6 - `--fix` mode for safe auto-corrections; plugin API
+- [ ] v1.0 - used by `erphq/skills` in CI; documented schema versioned independently
 
 ## ✦ Topics
 
@@ -244,4 +244,4 @@ collide on triggers? Stylistic checks belong upstream of `skillcheck`.
 
 ## ✦ License
 
-MIT — see [LICENSE](./LICENSE).
+MIT - see [LICENSE](./LICENSE).
