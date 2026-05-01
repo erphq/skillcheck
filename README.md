@@ -209,7 +209,15 @@ published as a stable schema. We err on the side of not breaking your CI
 when Anthropic ships a new tool.
 
 **Q: How do I add my own checks?**
-A: For now, fork. v0.5 will expose a plugin API.
+A: Pass `--plugin <path-or-specifier>` (repeatable). A plugin is a
+module whose default export is `{ name, rules }`, where each rule
+has an `id` and a `check(ctx)` that returns `Diagnostic[]`. The
+context exposes the same `parsed` / `validated` / `config` the
+built-in checks see, so you can write semantic checks against the
+real frontmatter shape. A plugin rule that throws is converted to
+an error diagnostic tagged `<plugin>/<rule-id>` so a buggy plugin
+cannot take down the whole run. See the `SkillcheckPlugin` type
+exported from `skillcheck`.
 
 **Q: What about skills inside plugin directories?**
 A: They work - point `skillcheck` at the directory. Plugin-namespaced
@@ -234,7 +242,7 @@ collide on triggers? Stylistic checks belong upstream of `skillcheck`.
 - [x] v0.3 - description collision detector (Jaccard ≥ 0.6)
 - [x] v0.4 - SARIF 2.1.0 output for GitHub Code Scanning
 - [x] v0.5 - npm publish + GitHub Actions release workflow (`--provenance`); CHANGELOG.md
-- [ ] v0.6 - `--fix` mode for safe auto-corrections; plugin API
+- [x] v0.6 - `--fix` mode for safe auto-corrections (today: `name-drift`); plugin API
 - [ ] v1.0 - used by `erphq/skills` in CI; documented schema versioned independently
 
 ## ✦ Topics
