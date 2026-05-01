@@ -213,7 +213,10 @@ A: They work — point `skillcheck` at the directory. Plugin-namespaced
 skills (`plugin:skill`) aren't validated against plugin manifests yet.
 
 **Q: SARIF support?**
-A: Planned for v0.4 — opens the door to GitHub Code Scanning integration.
+A: Shipped in v0.4 (`--format sarif`). Output conforms to SARIF 2.1.0
+and is consumable by GitHub Code Scanning's `upload-sarif` action.
+Every rule appears in `tool.driver.rules` with a stable id, name,
+short description, and default level.
 
 **Q: How does this differ from `markdownlint` or `eslint`?**
 A: Those check syntax. `skillcheck` checks *semantics*: does this skill
@@ -223,11 +226,12 @@ collide on triggers? Stylistic checks belong upstream of `skillcheck`.
 ## ✦ Roadmap
 
 - [x] v0.0 — scaffold, schema, structure
-- [ ] v0.1 — frontmatter schema + tool ref check + tests + npm publish
-- [ ] v0.2 — MCP server ref check
-- [ ] v0.3 — description collision detector
-- [ ] v0.4 — SARIF output for GitHub Code Scanning
-- [ ] v0.5 — `--fix` mode for safe auto-corrections; plugin API
+- [x] v0.1 — frontmatter schema + tool ref check + tests
+- [x] v0.2 — MCP server ref check
+- [x] v0.3 — description collision detector (Jaccard ≥ 0.6)
+- [x] v0.4 — SARIF 2.1.0 output for GitHub Code Scanning
+- [ ] v0.5 — npm publish + release workflow
+- [ ] v0.6 — `--fix` mode for safe auto-corrections; plugin API
 - [ ] v1.0 — used by `erphq/skills` in CI; documented schema versioned independently
 
 ## ✦ Topics

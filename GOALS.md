@@ -11,7 +11,7 @@ default tool in `erphq/skills` and adopted by ≥3 external skill repos.
 - Single binary install via `npx skillcheck`
 
 ## v1 success criteria
-- SARIF integration in GitHub Actions
+- SARIF integration in GitHub Actions ✅ (v0.4 ships SARIF 2.1.0)
 - Used by ≥3 external skill repos
 - Schema versioned independently of Claude Code releases
 

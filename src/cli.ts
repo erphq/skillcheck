@@ -5,7 +5,10 @@ import { parseSkillFile, ParseError } from "./parse.js";
 import { runChecks } from "./checks.js";
 import { loadConfig } from "./config.js";
 import { reportText, reportJson } from "./report.js";
+import { reportSarif } from "./sarif.js";
 import type { Diagnostic, ParsedSkill } from "./types.js";
+
+const VERSION = "0.1.0";
 
 interface CliOpts {
   strict?: boolean;
@@ -17,10 +20,10 @@ const program = new Command();
 program
   .name("skillcheck")
   .description("Static analyzer for Claude Code skills")
-  .version("0.1.0")
+  .version(VERSION)
   .argument("[paths...]", "files or globs to lint", [".claude/skills/**/*.md"])
   .option("--strict", "treat warnings as errors")
-  .option("--format <fmt>", "output format: text | json", "text")
+  .option("--format <fmt>", "output format: text | json | sarif", "text")
   .action(async (paths: string[], opts: CliOpts) => {
     const cwd = process.cwd();
     const config = await loadConfig(cwd);
@@ -59,10 +62,21 @@ program
     }
     diagnostics.push(...runChecks(parsed, config));
 
-    const out =
-      opts.format === "json"
-        ? reportJson(diagnostics)
-        : reportText(diagnostics, cwd);
+    let out: string;
+    switch (opts.format) {
+      case "json":
+        out = reportJson(diagnostics);
+        break;
+      case "sarif":
+        out = reportSarif(diagnostics, cwd, { toolVersion: VERSION });
+        break;
+      case "text":
+        out = reportText(diagnostics, cwd);
+        break;
+      default:
+        console.error(`skillcheck: unknown format '${opts.format}'`);
+        process.exit(1);
+    }
     console.log(out);
 
     const errors = diagnostics.filter((d) => d.severity === "error").length;

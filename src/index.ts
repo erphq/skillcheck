@@ -2,6 +2,7 @@ export { parseSkillFile, parseSkillContent, ParseError } from "./parse.js";
 export { runChecks } from "./checks.js";
 export { loadConfig } from "./config.js";
 export { reportText, reportJson } from "./report.js";
+export { reportSarif, RULES as SARIF_RULES } from "./sarif.js";
 export { BUILTIN_TOOLS, isMcpTool, parseMcpToolName } from "./builtins.js";
 export type {
   Diagnostic,
