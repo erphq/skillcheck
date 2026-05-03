@@ -130,4 +130,41 @@ describe("runChecks", () => {
     const ds = runChecks([s], config);
     expect(ds.some((d) => d.rule === "description-length")).toBe(true);
   });
+
+  it("skips mcp-server-unknown when mcpServers set is empty", () => {
+    const noServersConfig: SkillcheckConfig = {
+      knownTools: new Set(BUILTIN_TOOLS),
+      mcpServers: new Set(),
+      cwd: "/test",
+    };
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do foo",
+      tools: ["mcp__anyserver__some_tool"],
+    });
+    const ds = runChecks([s], noServersConfig);
+    expect(ds.find((d) => d.rule === "mcp-server-unknown")).toBeUndefined();
+  });
+
+  it("does not fire description-collision when Jaccard is below threshold", () => {
+    const a = mkSkill("/test/a/a.md", {
+      name: "a",
+      description: "deploy the application to staging environment",
+    });
+    const b = mkSkill("/test/b/b.md", {
+      name: "b",
+      description: "search repositories and list open pull requests",
+    });
+    const ds = runChecks([a, b], config);
+    expect(ds.filter((d) => d.rule === "description-collision").length).toBe(0);
+  });
+
+  it("does not flag name-drift when name matches the directory", () => {
+    const s = mkSkill("/test/foo/index.md", {
+      name: "foo",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "name-drift")).toBeUndefined();
+  });
 });
