@@ -79,7 +79,15 @@ export const RULES: readonly SarifRule[] = [
     id: "description-collision",
     name: "descriptionCollision",
     shortDescription:
-      "Two skills' descriptions overlap on triggers (Jaccard ≥ 0.6).",
+      "Two skills' descriptions overlap on triggers (Jaccard >= 0.6).",
+    helpUri: HELP_BASE,
+    defaultLevel: "warning",
+  },
+  {
+    id: "tools-overloaded",
+    name: "toolsOverloaded",
+    shortDescription:
+      "tools: lists too many entries; listing everything defeats the purpose of the tools filter.",
     helpUri: HELP_BASE,
     defaultLevel: "warning",
   },
