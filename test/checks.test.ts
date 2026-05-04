@@ -167,4 +167,38 @@ describe("runChecks", () => {
     const ds = runChecks([s], config);
     expect(ds.find((d) => d.rule === "name-drift")).toBeUndefined();
   });
+
+  it("warns when tools lists 10 or more entries", () => {
+    const tools = ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebFetch", "WebSearch", "TodoWrite", "Agent"];
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+      tools,
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "tools-overloaded")).toBe(true);
+  });
+
+  it("does not warn when tools lists 9 entries", () => {
+    const tools = ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebFetch", "WebSearch", "TodoWrite"];
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+      tools,
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "tools-overloaded")).toBeUndefined();
+  });
+
+  it("tools-overloaded message includes the count", () => {
+    const tools = ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebFetch", "WebSearch", "TodoWrite", "Agent", "ToolSearch"];
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+      tools,
+    });
+    const ds = runChecks([s], config);
+    const d = ds.find((d) => d.rule === "tools-overloaded");
+    expect(d?.message).toContain("11");
+  });
 });

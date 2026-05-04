@@ -10,6 +10,7 @@ import type {
 
 const MAX_DESCRIPTION_CHARS = 500;
 const COLLISION_THRESHOLD = 0.6;
+const MAX_TOOLS_COUNT = 10;
 
 export function runChecks(
   parsed: ParsedSkill[],
@@ -28,6 +29,7 @@ export function runChecks(
     validated.push(v);
 
     diagnostics.push(...checkTools(v, config));
+    diagnostics.push(...checkToolsOverloaded(v));
     diagnostics.push(...checkDescriptionLength(v));
     diagnostics.push(...checkNameDrift(v));
   }
@@ -92,6 +94,20 @@ function checkTools(v: ValidatedSkill, config: SkillcheckConfig): Diagnostic[] {
     }
   }
   return out;
+}
+
+function checkToolsOverloaded(v: ValidatedSkill): Diagnostic[] {
+  if (v.tools.length >= MAX_TOOLS_COUNT) {
+    return [
+      {
+        severity: "warn",
+        rule: "tools-overloaded",
+        message: `tools: lists ${v.tools.length} tools; narrow the list to the tools this skill actually needs`,
+        file: v.file,
+      },
+    ];
+  }
+  return [];
 }
 
 function checkDescriptionLength(v: ValidatedSkill): Diagnostic[] {
