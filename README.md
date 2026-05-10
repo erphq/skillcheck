@@ -7,7 +7,7 @@
 **Lint the manifest. Verify the refs. Catch the collisions before runtime.**
 
 [![ci](https://github.com/erphq/skillcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/erphq/skillcheck/actions/workflows/ci.yml)
-![tests](https://img.shields.io/badge/tests-70%20passing-yellowgreen)
+![tests](https://img.shields.io/badge/tests-77%20passing-yellowgreen)
 
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![status](https://img.shields.io/badge/status-pre--v0-orange.svg)](#roadmap)
@@ -97,6 +97,7 @@ Exit codes:
 | `description-length` | warn | Description longer than 500 chars dilutes the trigger signal |
 | `name-drift` | warn | Frontmatter `name:` doesn't match the filename or directory |
 | `description-collision` | warn | Two skills' descriptions have Jaccard ≥ 0.6 |
+| `tools-overloaded` | warn | `tools:` lists 10 or more entries; narrow the list to what this skill actually needs |
 | `parse` | error | The file doesn't have valid frontmatter / YAML |
 
 The MCP and built-in tool checks read `~/.claude/settings.json` and
