@@ -20,7 +20,23 @@ describe("reportSarif", () => {
     expect(ruleIds).toContain("frontmatter-schema");
     expect(ruleIds).toContain("tool-unknown");
     expect(ruleIds).toContain("description-collision");
+    expect(ruleIds).toContain("tools-overloaded");
     expect(out.runs[0].results).toEqual([]);
+  });
+
+  it("emits tools-overloaded at warning level with correct ruleIndex", () => {
+    const diagnostics: Diagnostic[] = [
+      {
+        severity: "warn",
+        rule: "tools-overloaded",
+        message: "tools: lists 11 tools; narrow the list to the tools this skill actually needs",
+        file: "/test/a.md",
+      },
+    ];
+    const out = JSON.parse(reportSarif(diagnostics, "/test", opts));
+    expect(out.runs[0].results[0].level).toBe("warning");
+    const idx = out.runs[0].results[0].ruleIndex;
+    expect(out.runs[0].tool.driver.rules[idx].id).toBe("tools-overloaded");
   });
 
   it("converts severities to SARIF levels", () => {
