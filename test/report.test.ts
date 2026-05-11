@@ -88,6 +88,15 @@ describe("reportText — grouping and counts", () => {
     expect(out).toContain("1 error,");
     expect(out).not.toContain("1 errors");
   });
+
+  it("renders 'info' label for info-severity diagnostic lines", () => {
+    const out = reportText(
+      [diag({ severity: "info", message: "just noting" })],
+      "/repo",
+    );
+    expect(out).toContain("info");
+    expect(out).toContain("just noting");
+  });
 });
 
 describe("reportJson — wire format", () => {

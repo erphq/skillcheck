@@ -115,4 +115,64 @@ describe("applyFixes", () => {
     const written = await readFile(file, "utf8");
     expect(written).toBe(original);
   });
+
+  it("populates notes with a human-readable description for each applied fix", async () => {
+    const file = await writeSkill(
+      "summarizer.md",
+      `---\nname: summariser\ndescription: x\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "name-drift", message: "", file }],
+    );
+    expect(outcome.notes).toHaveLength(1);
+    expect(outcome.notes[0]).toContain("name-drift");
+    expect(outcome.notes[0]).toContain("summarizer");
+  });
+
+  it("does not count info-severity diagnostics as skipped", async () => {
+    const file = await writeSkill(
+      "x.md",
+      `---\nname: x\ndescription: y\n---\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "info", rule: "some-info-rule", message: "", file }],
+    );
+    expect(outcome.fixed).toBe(0);
+    expect(outcome.skipped).toBe(0);
+    expect(outcome.filesChanged).toEqual([]);
+  });
+
+  it("fixes name-drift across multiple files in a single call", async () => {
+    const f1 = await writeSkill(
+      "alpha.md",
+      `---\nname: wrong\ndescription: x\n---\nbody\n`,
+    );
+    const f2 = await writeSkill(
+      "beta.md",
+      `---\nname: wrong\ndescription: y\n---\nbody\n`,
+    );
+    const [p1, p2] = await Promise.all([
+      parseSkillFile(f1),
+      parseSkillFile(f2),
+    ]);
+    const outcome = await applyFixes(
+      [p1, p2],
+      [
+        { severity: "warn", rule: "name-drift", message: "", file: f1 },
+        { severity: "warn", rule: "name-drift", message: "", file: f2 },
+      ],
+    );
+    expect(outcome.fixed).toBe(2);
+    expect(outcome.filesChanged).toHaveLength(2);
+    const [c1, c2] = await Promise.all([
+      readFile(f1, "utf8"),
+      readFile(f2, "utf8"),
+    ]);
+    expect(c1).toContain("name: alpha");
+    expect(c2).toContain("name: beta");
+  });
 });
