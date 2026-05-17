@@ -91,6 +91,14 @@ export const RULES: readonly SarifRule[] = [
     helpUri: HELP_BASE,
     defaultLevel: "warning",
   },
+  {
+    id: "empty-body",
+    name: "emptyBody",
+    shortDescription:
+      "Skill body is empty; the file has frontmatter but no instructions for Claude.",
+    helpUri: HELP_BASE,
+    defaultLevel: "warning",
+  },
 ];
 
 const SEVERITY_TO_LEVEL: Record<Severity, SarifLevel> = {

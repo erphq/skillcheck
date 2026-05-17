@@ -201,4 +201,37 @@ describe("runChecks", () => {
     const d = ds.find((d) => d.rule === "tools-overloaded");
     expect(d?.message).toContain("11");
   });
+
+  it("warns when skill body is empty", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+    }, "");
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "empty-body")).toBe(true);
+  });
+
+  it("warns when skill body is whitespace only", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+    }, "   \n\n   ");
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "empty-body")).toBe(true);
+  });
+
+  it("does not warn on empty-body when body has content", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+    }, "Use Read to read a file, then summarize it.");
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "empty-body")).toBeUndefined();
+  });
+
+  it("does not fire empty-body when frontmatter is invalid", () => {
+    const s = mkSkill("/test/foo/foo.md", { name: "foo" }, "");
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "empty-body")).toBeUndefined();
+  });
 });
