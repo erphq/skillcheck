@@ -32,6 +32,7 @@ export function runChecks(
     diagnostics.push(...checkToolsOverloaded(v));
     diagnostics.push(...checkDescriptionLength(v));
     diagnostics.push(...checkNameDrift(v));
+    diagnostics.push(...checkEmptyBody(v));
   }
 
   diagnostics.push(...checkCollisions(validated));
@@ -137,6 +138,20 @@ function checkNameDrift(v: ValidatedSkill): Diagnostic[] {
         severity: "warn",
         rule: "name-drift",
         message: `frontmatter name '${v.name}' does not match filename '${fileBase}' or directory '${dirBase}'`,
+        file: v.file,
+      },
+    ];
+  }
+  return [];
+}
+
+function checkEmptyBody(v: ValidatedSkill): Diagnostic[] {
+  if (v.body.trim().length === 0) {
+    return [
+      {
+        severity: "warn",
+        rule: "empty-body",
+        message: "skill body is empty; add instructions for Claude to follow",
         file: v.file,
       },
     ];
