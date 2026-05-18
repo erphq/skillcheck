@@ -234,4 +234,34 @@ describe("runChecks", () => {
     const ds = runChecks([s], config);
     expect(ds.find((d) => d.rule === "empty-body")).toBeUndefined();
   });
+
+  it("flags duplicate skill names", () => {
+    const a = mkSkill("/test/a/deploy.md", { name: "deploy", description: "deploy the app" });
+    const b = mkSkill("/test/b/deploy.md", { name: "deploy", description: "deploy to staging" });
+    const ds = runChecks([a, b], config);
+    expect(ds.filter((d) => d.rule === "duplicate-name").length).toBe(2);
+  });
+
+  it("does not flag duplicate-name for unique names", () => {
+    const a = mkSkill("/test/a/deploy.md", { name: "deploy", description: "deploy the app" });
+    const b = mkSkill("/test/b/release.md", { name: "release", description: "cut a release" });
+    const ds = runChecks([a, b], config);
+    expect(ds.find((d) => d.rule === "duplicate-name")).toBeUndefined();
+  });
+
+  it("flags all skills in a three-way duplicate-name group", () => {
+    const a = mkSkill("/test/a/foo.md", { name: "foo", description: "do foo one way" });
+    const b = mkSkill("/test/b/foo.md", { name: "foo", description: "do foo another way" });
+    const c = mkSkill("/test/c/foo.md", { name: "foo", description: "do foo a third way" });
+    const ds = runChecks([a, b, c], config);
+    expect(ds.filter((d) => d.rule === "duplicate-name").length).toBe(3);
+  });
+
+  it("duplicate-name message names the conflicting file", () => {
+    const a = mkSkill("/test/a/deploy.md", { name: "deploy", description: "deploy the app" });
+    const b = mkSkill("/test/b/deploy.md", { name: "deploy", description: "deploy to staging" });
+    const ds = runChecks([a, b], config);
+    const diagA = ds.find((d) => d.rule === "duplicate-name" && d.file === "/test/a/deploy.md");
+    expect(diagA?.message).toContain("/test/b/deploy.md");
+  });
 });
