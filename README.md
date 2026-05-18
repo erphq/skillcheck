@@ -98,6 +98,7 @@ Exit codes:
 | `name-drift` | warn | Frontmatter `name:` doesn't match the filename or directory |
 | `description-collision` | warn | Two skills' descriptions have Jaccard ≥ 0.6 |
 | `tools-overloaded` | warn | `tools:` lists 10 or more entries; narrow the list to what this skill actually needs |
+| `duplicate-name` | warn | Two or more skills share the same `name:` value; resolution is ambiguous |
 | `parse` | error | The file doesn't have valid frontmatter / YAML |
 
 The MCP and built-in tool checks read `~/.claude/settings.json` and

@@ -36,6 +36,7 @@ export function runChecks(
   }
 
   diagnostics.push(...checkCollisions(validated));
+  diagnostics.push(...checkDuplicateNames(validated));
   return diagnostics;
 }
 
@@ -202,6 +203,33 @@ function checkCollisions(skills: ValidatedSkill[]): Diagnostic[] {
           file: tj.skill.file,
         });
       }
+    }
+  }
+  return out;
+}
+
+function checkDuplicateNames(skills: ValidatedSkill[]): Diagnostic[] {
+  const byName = new Map<string, ValidatedSkill[]>();
+  for (const s of skills) {
+    const key = s.name.toLowerCase();
+    const group = byName.get(key) ?? [];
+    group.push(s);
+    byName.set(key, group);
+  }
+  const out: Diagnostic[] = [];
+  for (const group of byName.values()) {
+    if (group.length < 2) continue;
+    for (const s of group) {
+      const others = group
+        .filter((g) => g.file !== s.file)
+        .map((g) => `'${g.file}'`)
+        .join(", ");
+      out.push({
+        severity: "warn",
+        rule: "duplicate-name",
+        message: `skill name '${s.name}' is also declared in ${others}`,
+        file: s.file,
+      });
     }
   }
   return out;
