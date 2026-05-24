@@ -264,4 +264,30 @@ describe("runChecks", () => {
     const diagA = ds.find((d) => d.rule === "duplicate-name" && d.file === "/test/a/deploy.md");
     expect(diagA?.message).toContain("/test/b/deploy.md");
   });
+
+  it("duplicate-name match is case-insensitive", () => {
+    const a = mkSkill("/test/a/deploy.md", { name: "Deploy", description: "deploy the app" });
+    const b = mkSkill("/test/b/deploy.md", { name: "deploy", description: "deploy to staging" });
+    const ds = runChecks([a, b], config);
+    expect(ds.filter((d) => d.rule === "duplicate-name").length).toBe(2);
+  });
+
+  it("description-collision fires at exactly the 0.6 Jaccard threshold", () => {
+    // Tokens A: {foo, bar, baz, qux}  (4 tokens)
+    // Tokens B: {foo, bar, baz, quux} (4 tokens)
+    // intersection: 3, union: 5 -> Jaccard = 3/5 = 0.6 exactly
+    const a = mkSkill("/test/a/a.md", { name: "a", description: "foo bar baz qux" });
+    const b = mkSkill("/test/b/b.md", { name: "b", description: "foo bar baz quux" });
+    const ds = runChecks([a, b], config);
+    expect(ds.filter((d) => d.rule === "description-collision").length).toBe(2);
+  });
+
+  it("name-drift match is case-insensitive", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "FOO",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "name-drift")).toBeUndefined();
+  });
 });
