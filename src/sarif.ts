@@ -99,6 +99,14 @@ export const RULES: readonly SarifRule[] = [
     helpUri: HELP_BASE,
     defaultLevel: "warning",
   },
+  {
+    id: "duplicate-name",
+    name: "duplicateName",
+    shortDescription:
+      "Two or more skills share the same name value; resolution is ambiguous.",
+    helpUri: HELP_BASE,
+    defaultLevel: "warning",
+  },
 ];
 
 const SEVERITY_TO_LEVEL: Record<Severity, SarifLevel> = {
