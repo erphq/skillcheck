@@ -21,7 +21,35 @@ describe("reportSarif", () => {
     expect(ruleIds).toContain("tool-unknown");
     expect(ruleIds).toContain("description-collision");
     expect(ruleIds).toContain("tools-overloaded");
+    expect(ruleIds).toContain("duplicate-name");
     expect(out.runs[0].results).toEqual([]);
+  });
+
+  it("includes duplicate-name in the catalog with a proper description", () => {
+    const out = JSON.parse(reportSarif([], "/test", opts));
+    const rule = out.runs[0].tool.driver.rules.find(
+      (r: { id: string }) => r.id === "duplicate-name",
+    );
+    expect(rule).toBeDefined();
+    expect(rule.name).toBe("duplicateName");
+    expect(rule.defaultConfiguration.level).toBe("warning");
+    expect(rule.shortDescription.text).not.toBe("duplicate-name");
+  });
+
+  it("ruleIndex for duplicate-name points to the registered entry, not a fallback", () => {
+    const diagnostics: Diagnostic[] = [
+      {
+        severity: "warn",
+        rule: "duplicate-name",
+        message: "skill name 'foo' is also declared in '/b.md'",
+        file: "/test/a.md",
+      },
+    ];
+    const out = JSON.parse(reportSarif(diagnostics, "/test", opts));
+    const idx = out.runs[0].results[0].ruleIndex;
+    const rule = out.runs[0].tool.driver.rules[idx];
+    expect(rule.id).toBe("duplicate-name");
+    expect(rule.name).toBe("duplicateName");
   });
 
   it("emits tools-overloaded at warning level with correct ruleIndex", () => {
