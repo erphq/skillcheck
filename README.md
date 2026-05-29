@@ -10,7 +10,7 @@
 ![tests](https://img.shields.io/badge/tests-77%20passing-yellowgreen)
 
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![status](https://img.shields.io/badge/status-pre--v0-orange.svg)](#roadmap)
+[![status](https://img.shields.io/badge/status-v0.6.0-orange.svg)](#roadmap)
 [![node](https://img.shields.io/badge/node-20%2B-green.svg)](#install)
 
 </div>
