@@ -175,4 +175,49 @@ describe("applyFixes", () => {
     expect(c1).toContain("name: alpha");
     expect(c2).toContain("name: beta");
   });
+
+  it("fixes name-drift on a file with CRLF line endings", async () => {
+    const file = await writeSkill(
+      "myskill.md",
+      `---\r\nname: wrongname\r\ndescription: x\r\n---\r\nbody\r\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "name-drift", message: "", file }],
+    );
+    expect(outcome.fixed).toBe(1);
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("name: myskill");
+    expect(written).not.toContain("name: wrongname");
+  });
+
+  it("preserves body line endings after fixing CRLF frontmatter", async () => {
+    const file = await writeSkill(
+      "myskill.md",
+      `---\r\nname: wrongname\r\ndescription: x\r\n---\r\nline one\r\nline two\r\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "name-drift", message: "", file }],
+    );
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("line one\r\n");
+    expect(written).toContain("line two\r\n");
+  });
+
+  it("skips a CRLF file when the name field is absent", async () => {
+    const original = `---\r\ndescription: x\r\n---\r\nbody\r\n`;
+    const file = await writeSkill("myskill.md", original);
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "name-drift", message: "", file }],
+    );
+    expect(outcome.fixed).toBe(0);
+    expect(outcome.skipped).toBe(1);
+    const written = await readFile(file, "utf8");
+    expect(written).toBe(original);
+  });
 });
