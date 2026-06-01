@@ -290,4 +290,22 @@ describe("runChecks", () => {
     const ds = runChecks([s], config);
     expect(ds.find((d) => d.rule === "name-drift")).toBeUndefined();
   });
+
+  it("does not flag name-drift for a plugin-namespaced skill in canonical split structure", () => {
+    const s = mkSkill("/test/github/search.md", {
+      name: "github:search",
+      description: "search github repositories for code and issues",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "name-drift")).toBeUndefined();
+  });
+
+  it("flags name-drift for a plugin-namespaced skill when dir and file do not match either part", () => {
+    const s = mkSkill("/test/skills/something-else.md", {
+      name: "github:search",
+      description: "search github repositories for code and issues",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "name-drift")).toBe(true);
+  });
 });

@@ -129,21 +129,29 @@ function checkDescriptionLength(v: ValidatedSkill): Diagnostic[] {
 function checkNameDrift(v: ValidatedSkill): Diagnostic[] {
   const fileBase = basename(v.file).replace(/\.md$/, "");
   const dirBase = basename(dirname(v.file));
-  const expected = v.name.toLowerCase();
-  if (
-    fileBase.toLowerCase() !== expected &&
-    dirBase.toLowerCase() !== expected
-  ) {
-    return [
-      {
-        severity: "warn",
-        rule: "name-drift",
-        message: `frontmatter name '${v.name}' does not match filename '${fileBase}' or directory '${dirBase}'`,
-        file: v.file,
-      },
-    ];
+  const nameLower = v.name.toLowerCase();
+  const fileLower = fileBase.toLowerCase();
+  const dirLower = dirBase.toLowerCase();
+
+  if (fileLower === nameLower || dirLower === nameLower) return [];
+
+  // For plugin-namespaced names ("prefix:local"), also accept the
+  // canonical split structure: dir == prefix, file == local.
+  const colon = nameLower.indexOf(":");
+  if (colon !== -1) {
+    const prefix = nameLower.slice(0, colon);
+    const local = nameLower.slice(colon + 1);
+    if (dirLower === prefix && fileLower === local) return [];
   }
-  return [];
+
+  return [
+    {
+      severity: "warn",
+      rule: "name-drift",
+      message: `frontmatter name '${v.name}' does not match filename '${fileBase}' or directory '${dirBase}'`,
+      file: v.file,
+    },
+  ];
 }
 
 function checkEmptyBody(v: ValidatedSkill): Diagnostic[] {
