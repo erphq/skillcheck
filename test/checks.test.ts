@@ -308,4 +308,54 @@ describe("runChecks", () => {
     const ds = runChecks([s], config);
     expect(ds.some((d) => d.rule === "name-drift")).toBe(true);
   });
+
+  it("warns on an unrecognized model name", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+      model: "claude-sonet-4-6",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "model-unknown")).toBe(true);
+  });
+
+  it("does not warn on a recognized model", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+      model: "claude-sonnet-4-6",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "model-unknown")).toBeUndefined();
+  });
+
+  it("does not warn when model field is absent", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "model-unknown")).toBeUndefined();
+  });
+
+  it("model-unknown message includes the offending model name", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+      model: "gpt-4o",
+    });
+    const ds = runChecks([s], config);
+    const d = ds.find((d) => d.rule === "model-unknown");
+    expect(d?.message).toContain("gpt-4o");
+  });
+
+  it("warns on model-unknown for each model in the known-3.x series", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+      model: "claude-3-5-sonnet-20241022",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "model-unknown")).toBeUndefined();
+  });
 });
