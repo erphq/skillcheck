@@ -99,6 +99,8 @@ Exit codes:
 | `description-collision` | warn | Two skills' descriptions have Jaccard ≥ 0.6 |
 | `tools-overloaded` | warn | `tools:` lists 10 or more entries; narrow the list to what this skill actually needs |
 | `duplicate-name` | warn | Two or more skills share the same `name:` value; resolution is ambiguous |
+| `empty-body` | warn | Skill body has no instructions; Claude has nothing to follow |
+| `model-unknown` | warn | `model:` value is not a recognized Claude model ID; likely a typo |
 | `parse` | error | The file doesn't have valid frontmatter / YAML |
 
 The MCP and built-in tool checks read `~/.claude/settings.json` and

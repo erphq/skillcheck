@@ -12,6 +12,22 @@ const MAX_DESCRIPTION_CHARS = 500;
 const COLLISION_THRESHOLD = 0.6;
 const MAX_TOOLS_COUNT = 10;
 
+// Known Claude model IDs. Severity is warn (not error) because the list
+// evolves with each Anthropic release; update this set when new models ship.
+const KNOWN_CLAUDE_MODELS: ReadonlySet<string> = new Set([
+  "claude-3-haiku-20240307",
+  "claude-3-opus-20240229",
+  "claude-3-opus-latest",
+  "claude-3-sonnet-20240229",
+  "claude-3-5-haiku-20241022",
+  "claude-3-5-haiku-latest",
+  "claude-3-5-sonnet-20241022",
+  "claude-3-5-sonnet-latest",
+  "claude-haiku-4-5-20251001",
+  "claude-opus-4-8",
+  "claude-sonnet-4-6",
+]);
+
 export function runChecks(
   parsed: ParsedSkill[],
   config: SkillcheckConfig,
@@ -33,6 +49,7 @@ export function runChecks(
     diagnostics.push(...checkDescriptionLength(v));
     diagnostics.push(...checkNameDrift(v));
     diagnostics.push(...checkEmptyBody(v));
+    diagnostics.push(...checkModelUnknown(v));
   }
 
   diagnostics.push(...checkCollisions(validated));
@@ -149,6 +166,21 @@ function checkNameDrift(v: ValidatedSkill): Diagnostic[] {
       severity: "warn",
       rule: "name-drift",
       message: `frontmatter name '${v.name}' does not match filename '${fileBase}' or directory '${dirBase}'`,
+      file: v.file,
+    },
+  ];
+}
+
+function checkModelUnknown(v: ValidatedSkill): Diagnostic[] {
+  const model = v.frontmatter.model;
+  if (model === undefined) return [];
+  if (typeof model !== "string" || model.length === 0) return [];
+  if (KNOWN_CLAUDE_MODELS.has(model)) return [];
+  return [
+    {
+      severity: "warn",
+      rule: "model-unknown",
+      message: `model '${model}' is not a recognized Claude model; check for typos or update skillcheck`,
       file: v.file,
     },
   ];
