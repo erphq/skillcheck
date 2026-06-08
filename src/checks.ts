@@ -48,6 +48,7 @@ export function runChecks(
     diagnostics.push(...checkToolsOverloaded(v));
     diagnostics.push(...checkDescriptionLength(v));
     diagnostics.push(...checkNameDrift(v));
+    diagnostics.push(...checkNameWhitespace(v));
     diagnostics.push(...checkEmptyBody(v));
     diagnostics.push(...checkModelUnknown(v));
   }
@@ -169,6 +170,20 @@ function checkNameDrift(v: ValidatedSkill): Diagnostic[] {
       file: v.file,
     },
   ];
+}
+
+function checkNameWhitespace(v: ValidatedSkill): Diagnostic[] {
+  if (/\s/.test(v.name)) {
+    return [
+      {
+        severity: "warn",
+        rule: "name-whitespace",
+        message: `skill name '${v.name}' contains whitespace; use hyphens or underscores as word separators`,
+        file: v.file,
+      },
+    ];
+  }
+  return [];
 }
 
 function checkModelUnknown(v: ValidatedSkill): Diagnostic[] {

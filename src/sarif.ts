@@ -76,6 +76,14 @@ export const RULES: readonly SarifRule[] = [
     defaultLevel: "warning",
   },
   {
+    id: "name-whitespace",
+    name: "nameWhitespace",
+    shortDescription:
+      "Skill name contains whitespace; use hyphens or underscores as word separators.",
+    helpUri: HELP_BASE,
+    defaultLevel: "warning",
+  },
+  {
     id: "description-collision",
     name: "descriptionCollision",
     shortDescription:
@@ -104,6 +112,14 @@ export const RULES: readonly SarifRule[] = [
     name: "duplicateName",
     shortDescription:
       "Two or more skills share the same name value; resolution is ambiguous.",
+    helpUri: HELP_BASE,
+    defaultLevel: "warning",
+  },
+  {
+    id: "model-unknown",
+    name: "modelUnknown",
+    shortDescription:
+      "The model: value is not a recognized Claude model ID; likely a typo.",
     helpUri: HELP_BASE,
     defaultLevel: "warning",
   },

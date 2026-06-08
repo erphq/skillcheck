@@ -22,6 +22,8 @@ describe("reportSarif", () => {
     expect(ruleIds).toContain("description-collision");
     expect(ruleIds).toContain("tools-overloaded");
     expect(ruleIds).toContain("duplicate-name");
+    expect(ruleIds).toContain("model-unknown");
+    expect(ruleIds).toContain("name-whitespace");
     expect(out.runs[0].results).toEqual([]);
   });
 
@@ -137,5 +139,43 @@ describe("reportSarif", () => {
       { severity: "error", rule: "parse", message: "x", file: "/test/a.md" },
     ];
     expect(() => JSON.parse(reportSarif(diagnostics, "/test", opts))).not.toThrow();
+  });
+
+  it("model-unknown appears in the catalog with a proper camelCase name", () => {
+    const out = JSON.parse(reportSarif([], "/test", opts));
+    const rule = out.runs[0].tool.driver.rules.find(
+      (r: { id: string }) => r.id === "model-unknown",
+    );
+    expect(rule).toBeDefined();
+    expect(rule.name).toBe("modelUnknown");
+    expect(rule.defaultConfiguration.level).toBe("warning");
+    expect(rule.shortDescription.text).not.toBe("model-unknown");
+  });
+
+  it("name-whitespace appears in the catalog with a proper camelCase name", () => {
+    const out = JSON.parse(reportSarif([], "/test", opts));
+    const rule = out.runs[0].tool.driver.rules.find(
+      (r: { id: string }) => r.id === "name-whitespace",
+    );
+    expect(rule).toBeDefined();
+    expect(rule.name).toBe("nameWhitespace");
+    expect(rule.defaultConfiguration.level).toBe("warning");
+    expect(rule.shortDescription.text).not.toBe("name-whitespace");
+  });
+
+  it("ruleIndex for name-whitespace points to the registered entry", () => {
+    const diagnostics: Diagnostic[] = [
+      {
+        severity: "warn",
+        rule: "name-whitespace",
+        message: "skill name 'bad name' contains whitespace",
+        file: "/test/a.md",
+      },
+    ];
+    const out = JSON.parse(reportSarif(diagnostics, "/test", opts));
+    const idx = out.runs[0].results[0].ruleIndex;
+    const rule = out.runs[0].tool.driver.rules[idx];
+    expect(rule.id).toBe("name-whitespace");
+    expect(rule.name).toBe("nameWhitespace");
   });
 });

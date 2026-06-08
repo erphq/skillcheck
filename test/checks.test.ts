@@ -358,4 +358,41 @@ describe("runChecks", () => {
     const ds = runChecks([s], config);
     expect(ds.find((d) => d.rule === "model-unknown")).toBeUndefined();
   });
+
+  it("warns when skill name contains spaces", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "my cool skill",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "name-whitespace")).toBe(true);
+  });
+
+  it("does not warn name-whitespace for a clean hyphenated name", () => {
+    const s = mkSkill("/test/my-skill/my-skill.md", {
+      name: "my-skill",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "name-whitespace")).toBeUndefined();
+  });
+
+  it("name-whitespace message includes the offending name", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "bad name here",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    const d = ds.find((d) => d.rule === "name-whitespace");
+    expect(d?.message).toContain("bad name here");
+  });
+
+  it("warns when skill name contains a leading space", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: " foo",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "name-whitespace")).toBe(true);
+  });
 });
