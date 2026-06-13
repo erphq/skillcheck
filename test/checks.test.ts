@@ -388,13 +388,14 @@ describe("runChecks", () => {
     expect(ds.find((d) => d.rule === "name-drift")).toBeUndefined();
   });
 
-  it("does not flag legacy name-drift when name matches the filename", () => {
+  it("flags name-drift when name matches the filename but not the parent directory", () => {
     const s = mkSkill("/test/different/foo.md", {
       name: "foo",
       description: "do the foo thing",
     });
     const ds = runChecks([s], config);
-    expect(ds.find((d) => d.rule === "name-drift")).toBeUndefined();
+    const d = ds.find((d) => d.rule === "name-drift");
+    expect(d?.message).toContain("parent directory 'different'");
   });
 
   it("rejects plugin-namespaced names before name-drift checks", () => {

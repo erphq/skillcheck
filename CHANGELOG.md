@@ -16,6 +16,8 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Agent Skills spec validation for `name`, `description`, `license`,
   `compatibility`, and `metadata` frontmatter fields, plus a
   `skill-file-name` warning for non-`SKILL.md` package files.
+- `name-drift` now treats the parent directory as the canonical skill
+  name, and `--fix` rewrites `name:` to that directory name.
 
 ## [0.6.0] - 2026-05-01
 

@@ -71,7 +71,7 @@ export const RULES: readonly SarifRule[] = [
     id: "name-drift",
     name: "nameDrift",
     shortDescription:
-      "Frontmatter `name` does not match the filename or directory.",
+      "Frontmatter `name` does not match the parent directory.",
     helpUri: HELP_BASE,
     defaultLevel: "warning",
   },
