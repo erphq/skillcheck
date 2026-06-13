@@ -21,6 +21,7 @@ describe("reportSarif", () => {
     expect(ruleIds).toContain("tool-unknown");
     expect(ruleIds).toContain("description-collision");
     expect(ruleIds).toContain("tools-overloaded");
+    expect(ruleIds).toContain("tool-fields-ambiguous");
     expect(ruleIds).toContain("duplicate-name");
     expect(ruleIds).toContain("model-unknown");
     expect(ruleIds).toContain("name-whitespace");
@@ -59,7 +60,7 @@ describe("reportSarif", () => {
       {
         severity: "warn",
         rule: "tools-overloaded",
-        message: "tools: lists 11 tools; narrow the list to the tools this skill actually needs",
+        message: "tool allowlist lists 11 tools; narrow the list to the tools this skill actually needs",
         file: "/test/a.md",
       },
     ];

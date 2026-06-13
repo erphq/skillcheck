@@ -95,7 +95,23 @@ export const RULES: readonly SarifRule[] = [
     id: "tools-overloaded",
     name: "toolsOverloaded",
     shortDescription:
-      "tools: lists too many entries; listing everything defeats the purpose of the tools filter.",
+      "Tool allowlist lists too many entries; listing everything defeats the purpose of the tool filter.",
+    helpUri: HELP_BASE,
+    defaultLevel: "warning",
+  },
+  {
+    id: "tool-fields-ambiguous",
+    name: "toolFieldsAmbiguous",
+    shortDescription:
+      "Both tools: and allowed-tools: are present; tool declarations are ambiguous.",
+    helpUri: HELP_BASE,
+    defaultLevel: "warning",
+  },
+  {
+    id: "skill-file-name",
+    name: "skillFileName",
+    shortDescription:
+      "Skill package file is not named SKILL.md as expected by the Agent Skills spec.",
     helpUri: HELP_BASE,
     defaultLevel: "warning",
   },
