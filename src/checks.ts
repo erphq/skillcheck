@@ -44,6 +44,8 @@ export function runChecks(
     if (!v) continue;
     validated.push(v);
 
+    diagnostics.push(...checkSkillFileName(v));
+    diagnostics.push(...checkToolFieldsAmbiguous(v));
     diagnostics.push(...checkTools(v, config));
     diagnostics.push(...checkToolsOverloaded(v));
     diagnostics.push(...checkDescriptionLength(v));
@@ -65,8 +67,21 @@ function toValidated(p: ParsedSkill): ValidatedSkill | null {
     ...p,
     name: result.data.name,
     description: result.data.description,
-    tools: result.data.tools ?? [],
+    tools: combineTools(result.data.tools ?? [], result.data["allowed-tools"] ?? []),
   };
+}
+
+function combineTools(...groups: string[][]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const group of groups) {
+    for (const tool of group) {
+      if (seen.has(tool)) continue;
+      seen.add(tool);
+      out.push(tool);
+    }
+  }
+  return out;
 }
 
 function checkFrontmatter(p: ParsedSkill): Diagnostic[] {
@@ -80,6 +95,37 @@ function checkFrontmatter(p: ParsedSkill): Diagnostic[] {
       file: p.file,
     }),
   );
+}
+
+function checkSkillFileName(v: ValidatedSkill): Diagnostic[] {
+  if (basename(v.file) === "SKILL.md") return [];
+  return [
+    {
+      severity: "warn",
+      rule: "skill-file-name",
+      message:
+        "skill file is not named SKILL.md; Agent Skills packages are directories containing a SKILL.md file",
+      file: v.file,
+    },
+  ];
+}
+
+function checkToolFieldsAmbiguous(v: ValidatedSkill): Diagnostic[] {
+  if (
+    v.frontmatter.tools !== undefined &&
+    v.frontmatter["allowed-tools"] !== undefined
+  ) {
+    return [
+      {
+        severity: "warn",
+        rule: "tool-fields-ambiguous",
+        message:
+          "both tools: and allowed-tools: are present; prefer allowed-tools and remove tools to avoid ambiguous tool declarations",
+        file: v.file,
+      },
+    ];
+  }
+  return [];
 }
 
 function checkTools(v: ValidatedSkill, config: SkillcheckConfig): Diagnostic[] {
@@ -104,7 +150,7 @@ function checkTools(v: ValidatedSkill, config: SkillcheckConfig): Diagnostic[] {
           file: v.file,
         });
       }
-    } else if (!config.knownTools.has(tool)) {
+    } else if (!config.knownTools.has(builtinToolName(tool))) {
       out.push({
         severity: "warn",
         rule: "tool-unknown",
@@ -116,13 +162,18 @@ function checkTools(v: ValidatedSkill, config: SkillcheckConfig): Diagnostic[] {
   return out;
 }
 
+function builtinToolName(tool: string): string {
+  const match = tool.match(/^([A-Za-z][A-Za-z0-9]*)(?:\([^)]*\))?$/);
+  return match?.[1] ?? tool;
+}
+
 function checkToolsOverloaded(v: ValidatedSkill): Diagnostic[] {
   if (v.tools.length >= MAX_TOOLS_COUNT) {
     return [
       {
         severity: "warn",
         rule: "tools-overloaded",
-        message: `tools: lists ${v.tools.length} tools; narrow the list to the tools this skill actually needs`,
+        message: `tool allowlist lists ${v.tools.length} tools; narrow the list to the tools this skill actually needs`,
         file: v.file,
       },
     ];
@@ -145,28 +196,17 @@ function checkDescriptionLength(v: ValidatedSkill): Diagnostic[] {
 }
 
 function checkNameDrift(v: ValidatedSkill): Diagnostic[] {
-  const fileBase = basename(v.file).replace(/\.md$/, "");
   const dirBase = basename(dirname(v.file));
   const nameLower = v.name.toLowerCase();
-  const fileLower = fileBase.toLowerCase();
   const dirLower = dirBase.toLowerCase();
 
-  if (fileLower === nameLower || dirLower === nameLower) return [];
-
-  // For plugin-namespaced names ("prefix:local"), also accept the
-  // canonical split structure: dir == prefix, file == local.
-  const colon = nameLower.indexOf(":");
-  if (colon !== -1) {
-    const prefix = nameLower.slice(0, colon);
-    const local = nameLower.slice(colon + 1);
-    if (dirLower === prefix && fileLower === local) return [];
-  }
+  if (dirLower === nameLower) return [];
 
   return [
     {
       severity: "warn",
       rule: "name-drift",
-      message: `frontmatter name '${v.name}' does not match filename '${fileBase}' or directory '${dirBase}'`,
+      message: `frontmatter name '${v.name}' does not match parent directory '${dirBase}'`,
       file: v.file,
     },
   ];

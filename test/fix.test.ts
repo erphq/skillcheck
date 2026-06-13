@@ -22,9 +22,9 @@ async function writeSkill(rel: string, contents: string): Promise<string> {
 }
 
 describe("applyFixes", () => {
-  it("rewrites frontmatter name to match the filename", async () => {
+  it("rewrites frontmatter name to match the parent directory", async () => {
     const file = await writeSkill(
-      "summarizer.md",
+      "summarizer/SKILL.md",
       `---\nname: summariser\ndescription: x\n---\nbody\n`,
     );
     const parsed = await parseSkillFile(file);
@@ -49,7 +49,7 @@ describe("applyFixes", () => {
 
   it("dry run does not write to disk", async () => {
     const file = await writeSkill(
-      "summarizer.md",
+      "summarizer/SKILL.md",
       `---\nname: summariser\ndescription: x\n---\nbody\n`,
     );
     const parsed = await parseSkillFile(file);
@@ -90,7 +90,7 @@ describe("applyFixes", () => {
 
   it("preserves user formatting outside the name field", async () => {
     const original = `---\n# author: alice\ndescription: x\nname:   summariser\nallowed-tools:\n  - Read\n---\nhello\n`;
-    const file = await writeSkill("summarizer.md", original);
+    const file = await writeSkill("summarizer/SKILL.md", original);
     const parsed = await parseSkillFile(file);
     await applyFixes(
       [parsed],
@@ -104,7 +104,7 @@ describe("applyFixes", () => {
 
   it("does not rewrite when name field is absent (no safe insert)", async () => {
     const original = `---\ndescription: x\n---\nbody\n`;
-    const file = await writeSkill("summarizer.md", original);
+    const file = await writeSkill("summarizer/SKILL.md", original);
     const parsed = await parseSkillFile(file);
     const outcome = await applyFixes(
       [parsed],
@@ -118,7 +118,7 @@ describe("applyFixes", () => {
 
   it("populates notes with a human-readable description for each applied fix", async () => {
     const file = await writeSkill(
-      "summarizer.md",
+      "summarizer/SKILL.md",
       `---\nname: summariser\ndescription: x\n---\nbody\n`,
     );
     const parsed = await parseSkillFile(file);
@@ -148,11 +148,11 @@ describe("applyFixes", () => {
 
   it("fixes name-drift across multiple files in a single call", async () => {
     const f1 = await writeSkill(
-      "alpha.md",
+      "alpha/SKILL.md",
       `---\nname: wrong\ndescription: x\n---\nbody\n`,
     );
     const f2 = await writeSkill(
-      "beta.md",
+      "beta/SKILL.md",
       `---\nname: wrong\ndescription: y\n---\nbody\n`,
     );
     const [p1, p2] = await Promise.all([
@@ -178,7 +178,7 @@ describe("applyFixes", () => {
 
   it("fixes name-drift on a file with CRLF line endings", async () => {
     const file = await writeSkill(
-      "myskill.md",
+      "myskill/SKILL.md",
       `---\r\nname: wrongname\r\ndescription: x\r\n---\r\nbody\r\n`,
     );
     const parsed = await parseSkillFile(file);
@@ -194,7 +194,7 @@ describe("applyFixes", () => {
 
   it("preserves body line endings after fixing CRLF frontmatter", async () => {
     const file = await writeSkill(
-      "myskill.md",
+      "myskill/SKILL.md",
       `---\r\nname: wrongname\r\ndescription: x\r\n---\r\nline one\r\nline two\r\n`,
     );
     const parsed = await parseSkillFile(file);
@@ -209,7 +209,7 @@ describe("applyFixes", () => {
 
   it("skips a CRLF file when the name field is absent", async () => {
     const original = `---\r\ndescription: x\r\n---\r\nbody\r\n`;
-    const file = await writeSkill("myskill.md", original);
+    const file = await writeSkill("myskill/SKILL.md", original);
     const parsed = await parseSkillFile(file);
     const outcome = await applyFixes(
       [parsed],

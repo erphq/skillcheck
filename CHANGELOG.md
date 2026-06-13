@@ -6,6 +6,19 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+- Support for the Agent Skills spec `allowed-tools:` frontmatter field.
+  It is parsed as a tool allowlist, accepting the spec's space-separated
+  form plus comma separators used by existing skill repos, and validated
+  by the existing built-in, MCP format, MCP server, and overload checks.
+- `tool-fields-ambiguous` warning when both spec-supported
+  `allowed-tools:` and legacy `tools:` are present in the same skill.
+- Agent Skills spec validation for `name`, `description`, `license`,
+  `compatibility`, and `metadata` frontmatter fields, plus a
+  `skill-file-name` warning for non-`SKILL.md` package files.
+- `name-drift` now treats the parent directory as the canonical skill
+  name, and `--fix` rewrites `name:` to that directory name.
+
 ## [0.6.0] - 2026-05-01
 
 ### Added

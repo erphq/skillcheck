@@ -55,6 +55,91 @@ describe("runChecks", () => {
     expect(ds.find((d) => d.rule === "tool-unknown")).toBeUndefined();
   });
 
+  it("accepts space-separated allowed-tools string", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do foo",
+      "allowed-tools": "Read Edit Bash",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "tool-unknown")).toBeUndefined();
+  });
+
+  it("accepts scoped built-ins in allowed-tools", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do foo",
+      "allowed-tools": "Bash(ssh:*) Bash(git:*) Read",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "tool-unknown")).toBeUndefined();
+  });
+
+  it("accepts comma-separated scoped built-ins in allowed-tools", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do foo",
+      "allowed-tools": "Read, Bash(curl *), Bash(jq *)",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "tool-unknown")).toBeUndefined();
+  });
+
+  it("warns on unknown tool in allowed-tools", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do foo",
+      "allowed-tools": "Read BogusTool",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "tool-unknown")).toBe(true);
+  });
+
+  it("warns when both tools and allowed-tools are present", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do foo",
+      tools: ["Read"],
+      "allowed-tools": "Edit",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "tool-fields-ambiguous")).toBe(true);
+  });
+
+  it("warns on unknown MCP server from allowed-tools", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do foo",
+      "allowed-tools": "mcp__notconfigured__some_tool",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "mcp-server-unknown")).toBe(true);
+  });
+
+  it("does not warn on configured MCP server from allowed-tools", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do foo",
+      "allowed-tools": "mcp__github__create_issue",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "mcp-server-unknown")).toBeUndefined();
+  });
+
+  it("errors on malformed mcp tool name from allowed-tools", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do foo",
+      "allowed-tools": "mcp__missingtool",
+    });
+    const ds = runChecks([s], config);
+    expect(
+      ds.some(
+        (d) => d.severity === "error" && d.rule === "mcp-tool-format",
+      ),
+    ).toBe(true);
+  });
+
   it("warns on unknown MCP server", () => {
     const s = mkSkill("/test/foo/foo.md", {
       name: "foo",
@@ -112,7 +197,7 @@ describe("runChecks", () => {
   });
 
   it("clean skill produces no diagnostics", () => {
-    const s = mkSkill("/test/foo/foo.md", {
+    const s = mkSkill("/test/foo/SKILL.md", {
       name: "foo",
       description: "do the foo thing",
       tools: ["Read", "Edit"],
@@ -174,6 +259,16 @@ describe("runChecks", () => {
       name: "foo",
       description: "do the foo thing",
       tools,
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "tools-overloaded")).toBe(true);
+  });
+
+  it("warns when allowed-tools lists 10 or more entries", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+      "allowed-tools": "Read Write Edit Bash Glob Grep WebFetch WebSearch TodoWrite Agent",
     });
     const ds = runChecks([s], config);
     expect(ds.some((d) => d.rule === "tools-overloaded")).toBe(true);
@@ -265,11 +360,12 @@ describe("runChecks", () => {
     expect(diagA?.message).toContain("/test/b/deploy.md");
   });
 
-  it("duplicate-name match is case-insensitive", () => {
+  it("rejects mixed-case names before duplicate-name checks", () => {
     const a = mkSkill("/test/a/deploy.md", { name: "Deploy", description: "deploy the app" });
     const b = mkSkill("/test/b/deploy.md", { name: "deploy", description: "deploy to staging" });
     const ds = runChecks([a, b], config);
-    expect(ds.filter((d) => d.rule === "duplicate-name").length).toBe(2);
+    expect(ds.some((d) => d.rule === "frontmatter-schema" && d.file === "/test/a/deploy.md")).toBe(true);
+    expect(ds.find((d) => d.rule === "duplicate-name")).toBeUndefined();
   });
 
   it("description-collision fires at exactly the 0.6 Jaccard threshold", () => {
@@ -282,31 +378,34 @@ describe("runChecks", () => {
     expect(ds.filter((d) => d.rule === "description-collision").length).toBe(2);
   });
 
-  it("name-drift match is case-insensitive", () => {
+  it("rejects uppercase names before name-drift checks", () => {
     const s = mkSkill("/test/foo/foo.md", {
       name: "FOO",
       description: "do the foo thing",
     });
     const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "frontmatter-schema")).toBe(true);
     expect(ds.find((d) => d.rule === "name-drift")).toBeUndefined();
   });
 
-  it("does not flag name-drift for a plugin-namespaced skill in canonical split structure", () => {
+  it("flags name-drift when name matches the filename but not the parent directory", () => {
+    const s = mkSkill("/test/different/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    const d = ds.find((d) => d.rule === "name-drift");
+    expect(d?.message).toContain("parent directory 'different'");
+  });
+
+  it("rejects plugin-namespaced names before name-drift checks", () => {
     const s = mkSkill("/test/github/search.md", {
       name: "github:search",
       description: "search github repositories for code and issues",
     });
     const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "frontmatter-schema")).toBe(true);
     expect(ds.find((d) => d.rule === "name-drift")).toBeUndefined();
-  });
-
-  it("flags name-drift for a plugin-namespaced skill when dir and file do not match either part", () => {
-    const s = mkSkill("/test/skills/something-else.md", {
-      name: "github:search",
-      description: "search github repositories for code and issues",
-    });
-    const ds = runChecks([s], config);
-    expect(ds.some((d) => d.rule === "name-drift")).toBe(true);
   });
 
   it("warns on an unrecognized model name", () => {
@@ -359,13 +458,14 @@ describe("runChecks", () => {
     expect(ds.find((d) => d.rule === "model-unknown")).toBeUndefined();
   });
 
-  it("warns when skill name contains spaces", () => {
+  it("rejects skill names containing spaces", () => {
     const s = mkSkill("/test/foo/foo.md", {
       name: "my cool skill",
       description: "do the foo thing",
     });
     const ds = runChecks([s], config);
-    expect(ds.some((d) => d.rule === "name-whitespace")).toBe(true);
+    expect(ds.some((d) => d.rule === "frontmatter-schema")).toBe(true);
+    expect(ds.find((d) => d.rule === "name-whitespace")).toBeUndefined();
   });
 
   it("does not warn name-whitespace for a clean hyphenated name", () => {
@@ -377,22 +477,23 @@ describe("runChecks", () => {
     expect(ds.find((d) => d.rule === "name-whitespace")).toBeUndefined();
   });
 
-  it("name-whitespace message includes the offending name", () => {
+  it("frontmatter-schema message rejects the offending whitespace name", () => {
     const s = mkSkill("/test/foo/foo.md", {
       name: "bad name here",
       description: "do the foo thing",
     });
     const ds = runChecks([s], config);
-    const d = ds.find((d) => d.rule === "name-whitespace");
-    expect(d?.message).toContain("bad name here");
+    const d = ds.find((d) => d.rule === "frontmatter-schema");
+    expect(d?.message).toContain("lowercase letters");
   });
 
-  it("warns when skill name contains a leading space", () => {
+  it("rejects skill names containing a leading space", () => {
     const s = mkSkill("/test/foo/foo.md", {
       name: " foo",
       description: "do the foo thing",
     });
     const ds = runChecks([s], config);
-    expect(ds.some((d) => d.rule === "name-whitespace")).toBe(true);
+    expect(ds.some((d) => d.rule === "frontmatter-schema")).toBe(true);
+    expect(ds.find((d) => d.rule === "name-whitespace")).toBeUndefined();
   });
 });

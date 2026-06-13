@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import { SkillFrontmatter } from "../src/schema.js";
 
 // `SkillFrontmatter` is the boundary at which untrusted YAML
-// frontmatter becomes typed input for every check. The transform
-// on `tools` is the part that's most likely to drift silently —
-// it accepts both an array and a comma-separated string for
-// backwards compatibility.
+// frontmatter becomes typed input for every check. The transforms
+// on `tools` and `allowed-tools` are the parts most likely to drift
+// silently — legacy `tools` accepts both an array and a comma-separated
+// string, while spec-aligned `allowed-tools` is a space-separated string.
 
 describe("SkillFrontmatter — required fields", () => {
   it("accepts a minimal valid frontmatter", () => {
@@ -17,6 +17,7 @@ describe("SkillFrontmatter — required fields", () => {
     expect(out.name).toBe("my-skill");
     expect(out.description).toBe("does the thing");
     expect(out.tools).toBeUndefined();
+    expect(out["allowed-tools"]).toBeUndefined();
     expect(out.model).toBeUndefined();
   });
 
@@ -32,12 +33,82 @@ describe("SkillFrontmatter — required fields", () => {
     ).toThrow(/description/);
   });
 
+  it("rejects names longer than 64 characters", () => {
+    expect(() =>
+      SkillFrontmatter.parse({ name: "a".repeat(65), description: "x" }),
+    ).toThrow(/64/);
+  });
+
+  it("rejects names outside the Agent Skills slug format", () => {
+    const invalidNames = ["My-Skill", "my_skill", "-skill", "skill-", "skill--name", "skill name"];
+    for (const name of invalidNames) {
+      expect(() =>
+        SkillFrontmatter.parse({ name, description: "x" }),
+      ).toThrow(/lowercase/);
+    }
+  });
+
+  it("accepts lowercase hyphenated skill names", () => {
+    const out = SkillFrontmatter.parse({
+      name: "my-skill-2",
+      description: "x",
+    });
+    expect(out.name).toBe("my-skill-2");
+  });
+
+  it("rejects descriptions longer than 1024 characters", () => {
+    expect(() =>
+      SkillFrontmatter.parse({ name: "x", description: "a".repeat(1025) }),
+    ).toThrow(/1024/);
+  });
+
   it("rejects missing name", () => {
     expect(() => SkillFrontmatter.parse({ description: "x" })).toThrow();
   });
 
   it("rejects missing description", () => {
     expect(() => SkillFrontmatter.parse({ name: "x" })).toThrow();
+  });
+});
+
+describe("SkillFrontmatter — optional spec fields", () => {
+  it("accepts license, compatibility, and metadata strings", () => {
+    const out = SkillFrontmatter.parse({
+      name: "x",
+      description: "x",
+      license: "MIT",
+      compatibility: "Requires git",
+      metadata: { author: "erphq", version: "1.0.0" },
+    });
+    expect(out.license).toBe("MIT");
+    expect(out.compatibility).toBe("Requires git");
+    expect(out.metadata).toEqual({ author: "erphq", version: "1.0.0" });
+  });
+
+  it("rejects non-string license", () => {
+    expect(() =>
+      SkillFrontmatter.parse({ name: "x", description: "x", license: 123 }),
+    ).toThrow(/license/);
+  });
+
+  it("rejects compatibility longer than 500 characters", () => {
+    expect(() =>
+      SkillFrontmatter.parse({
+        name: "x",
+        description: "x",
+        compatibility: "a".repeat(501),
+      }),
+    ).toThrow(/500/);
+  });
+
+  it("rejects non-string metadata values", () => {
+    expect(() =>
+      SkillFrontmatter.parse({
+        name: "x",
+        description: "x",
+        metadata: { nested: { value: true } },
+      }),
+    ).toThrow(/metadata/);
   });
 });
 
@@ -99,6 +170,58 @@ describe("SkillFrontmatter — tools transform", () => {
   it("leaves tools undefined when omitted", () => {
     const out = SkillFrontmatter.parse({ name: "x", description: "x" });
     expect(out.tools).toBeUndefined();
+  });
+});
+
+describe("SkillFrontmatter — allowed-tools transform", () => {
+  it("splits a space-separated allowed-tools string", () => {
+    const out = SkillFrontmatter.parse({
+      name: "x",
+      description: "x",
+      "allowed-tools": "Read Bash(ssh:*) mcp__github__create_issue",
+    });
+    expect(out["allowed-tools"]).toEqual([
+      "Read",
+      "Bash(ssh:*)",
+      "mcp__github__create_issue",
+    ]);
+  });
+
+  it("trims repeated whitespace in allowed-tools", () => {
+    const out = SkillFrontmatter.parse({
+      name: "x",
+      description: "x",
+      "allowed-tools": " Read   Edit\nBash(git:*) ",
+    });
+    expect(out["allowed-tools"]).toEqual(["Read", "Edit", "Bash(git:*)"]);
+  });
+
+  it("accepts comma-separated allowed-tools without splitting scoped arguments", () => {
+    const out = SkillFrontmatter.parse({
+      name: "x",
+      description: "x",
+      "allowed-tools": "Read, Bash(curl *), Bash(jq *)",
+    });
+    expect(out["allowed-tools"]).toEqual([
+      "Read",
+      "Bash(curl *)",
+      "Bash(jq *)",
+    ]);
+  });
+
+  it("rejects non-string allowed-tools", () => {
+    expect(() =>
+      SkillFrontmatter.parse({
+        name: "x",
+        description: "x",
+        "allowed-tools": ["Read"],
+      }),
+    ).toThrow(/allowed-tools/);
+  });
+
+  it("leaves allowed-tools undefined when omitted", () => {
+    const out = SkillFrontmatter.parse({ name: "x", description: "x" });
+    expect(out["allowed-tools"]).toBeUndefined();
   });
 });
 

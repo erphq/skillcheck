@@ -26,9 +26,7 @@ export interface FixOptions {
  * skipped). Today the supported fix is:
  *
  *   - `name-drift`: rewrite the frontmatter `name:` value to match the
- *     filename (without the .md extension). The directory-name match
- *     is not used as the canonical because skills that live in their
- *     own directory often share a name with siblings.
+ *     parent directory, as required by the Agent Skills package spec.
  *
  * Returns a structured outcome so the CLI can report what changed
  * without hand-rolling the same logic.
@@ -59,7 +57,7 @@ export async function applyFixes(
       skipped++;
       continue;
     }
-    const expected = basename(p.file).replace(/\.md$/, "");
+    const expected = basename(dirname(p.file));
     const current = buffer.get(p.file) ?? p.raw;
     const next = rewriteFrontmatterName(current, expected);
     if (next === current) {
@@ -71,7 +69,7 @@ export async function applyFixes(
     buffer.set(p.file, next);
     fixed++;
     notes.push(
-      `${p.file}: name-drift -> set name to '${expected}' (was in directory '${basename(dirname(p.file))}')`,
+      `${p.file}: name-drift -> set name to '${expected}' (parent directory)`,
     );
   }
 

@@ -31,10 +31,11 @@ Static analysis closes that gap. Parse the manifest, walk the references, score 
 | Bug | What happens at runtime | What `skillcheck` does |
 |---|---|---|
 | Missing `description` | Skill silently never selected | Error |
-| Tool listed in `tools:` was renamed | Skill invokes ghost tool, fails | Warn |
+| Tool listed in `allowed-tools:` / `tools:` was renamed | Skill invokes ghost tool, fails | Warn |
 | Two skills with overlapping descriptions | Wrong one fires | Warn (Jaccard) |
 | Description longer than 500 chars | Registry pollution; trigger dilution | Warn |
-| Frontmatter `name:` doesn't match the file | Confused lookups, lost skills | Warn |
+| Frontmatter `name:` doesn't match the parent directory | Confused lookups, lost skills | Warn |
+| Skill file is not named `SKILL.md` | Non-standard package layout | Warn |
 | MCP tool string typo (`mcp__githhub__...`) | Skill invokes ghost tool | Error |
 | MCP server not configured | Skill works for author, breaks for users | Warn |
 
@@ -90,14 +91,16 @@ Exit codes:
 
 | Rule | Severity | Description |
 |---|---|---|
-| `frontmatter-schema` | error | `name` and `description` are required strings; `tools` is array or comma-string |
+| `frontmatter-schema` | error | `name` and `description` are required strings following Agent Skills spec limits; optional `license`, `compatibility`, `metadata`, `allowed-tools`, legacy `tools`, and `model` have expected types. `allowed-tools` follows the spec's string field and skillcheck also tolerates comma separators used by existing skill repos. |
 | `mcp-tool-format` | error | Strings starting with `mcp__` parse as `mcp__<server>__<tool>` |
 | `tool-unknown` | warn | Tool is not a known built-in and not an MCP tool |
 | `mcp-server-unknown` | warn | MCP tool references a server not configured in any `settings.json` |
 | `description-length` | warn | Description longer than 500 chars dilutes the trigger signal |
-| `name-drift` | warn | Frontmatter `name:` doesn't match the filename or directory |
+| `name-drift` | warn | Frontmatter `name:` doesn't match the parent directory |
 | `description-collision` | warn | Two skills' descriptions have Jaccard ≥ 0.6 |
-| `tools-overloaded` | warn | `tools:` lists 10 or more entries; narrow the list to what this skill actually needs |
+| `tools-overloaded` | warn | Tool allowlist (`allowed-tools:` or legacy `tools:`) lists 10 or more entries; narrow it to what this skill actually needs |
+| `tool-fields-ambiguous` | warn | Both `allowed-tools:` and legacy `tools:` are present; prefer the spec-supported `allowed-tools:` field |
+| `skill-file-name` | warn | Skill file is not named `SKILL.md`; Agent Skills packages are directories containing a `SKILL.md` file |
 | `duplicate-name` | warn | Two or more skills share the same `name:` value; resolution is ambiguous |
 | `empty-body` | warn | Skill body has no instructions; Claude has nothing to follow |
 | `model-unknown` | warn | `model:` value is not a recognized Claude model ID; likely a typo |
@@ -175,8 +178,8 @@ Useful for piping into your own reporters, custom checks, or test suites.
 |---|---|
 | Description that's a multi-paragraph essay | Claude has to read all skill descriptions every turn - long ones get skimmed |
 | Two skills both described as "use this when working on X" | Selection is non-deterministic; one of them never fires |
-| `tools: [Read, Edit, Bash, Write, ...]` (everything) | Defeats the purpose of `tools:`; signals the author didn't think about scope |
-| `name: my-skill` in `skills/different/different-skill.md` | Skill name resolution diverges from file path |
+| `allowed-tools: Read Edit Bash Write ...` or legacy `tools: [Read, Edit, Bash, Write, ...]` (everything) | Defeats the purpose of a tool allowlist; signals the author didn't think about scope |
+| `name: my-skill` in `skills/different/SKILL.md` | Skill name resolution diverges from the package directory |
 | `mcp__github__create_issue` with no `github` MCP server configured | Skill works for author, breaks for everyone else |
 
 ## ✦ Non-goals
