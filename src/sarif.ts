@@ -68,6 +68,14 @@ export const RULES: readonly SarifRule[] = [
     defaultLevel: "warning",
   },
   {
+    id: "description-too-short",
+    name: "descriptionTooShort",
+    shortDescription:
+      "Description is too short to give Claude a reliable trigger signal.",
+    helpUri: HELP_BASE,
+    defaultLevel: "warning",
+  },
+  {
     id: "name-drift",
     name: "nameDrift",
     shortDescription:

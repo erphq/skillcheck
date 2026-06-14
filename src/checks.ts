@@ -8,6 +8,7 @@ import type {
   ValidatedSkill,
 } from "./types.js";
 
+const MIN_DESCRIPTION_CHARS = 10;
 const MAX_DESCRIPTION_CHARS = 500;
 const COLLISION_THRESHOLD = 0.6;
 const MAX_TOOLS_COUNT = 10;
@@ -49,6 +50,7 @@ export function runChecks(
     diagnostics.push(...checkTools(v, config));
     diagnostics.push(...checkToolsOverloaded(v));
     diagnostics.push(...checkDescriptionLength(v));
+    diagnostics.push(...checkDescriptionTooShort(v));
     diagnostics.push(...checkNameDrift(v));
     diagnostics.push(...checkNameWhitespace(v));
     diagnostics.push(...checkEmptyBody(v));
@@ -188,6 +190,20 @@ function checkDescriptionLength(v: ValidatedSkill): Diagnostic[] {
         severity: "warn",
         rule: "description-length",
         message: `description is ${v.description.length} chars (>${MAX_DESCRIPTION_CHARS}); long descriptions dilute the trigger signal`,
+        file: v.file,
+      },
+    ];
+  }
+  return [];
+}
+
+function checkDescriptionTooShort(v: ValidatedSkill): Diagnostic[] {
+  if (v.description.length < MIN_DESCRIPTION_CHARS) {
+    return [
+      {
+        severity: "warn",
+        rule: "description-too-short",
+        message: `description is ${v.description.length} chars (<${MIN_DESCRIPTION_CHARS}); too brief to give Claude a reliable trigger signal`,
         file: v.file,
       },
     ];

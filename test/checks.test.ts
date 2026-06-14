@@ -496,4 +496,47 @@ describe("runChecks", () => {
     expect(ds.some((d) => d.rule === "frontmatter-schema")).toBe(true);
     expect(ds.find((d) => d.rule === "name-whitespace")).toBeUndefined();
   });
+
+  it("warns when description is below 10 chars", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do foo",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "description-too-short")).toBe(true);
+  });
+
+  it("does not warn when description is exactly 10 chars", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "description-too-short")).toBeUndefined();
+  });
+
+  it("does not warn when description is well above 10 chars", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "description-too-short")).toBeUndefined();
+  });
+
+  it("description-too-short message includes the char count", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do foo",
+    });
+    const ds = runChecks([s], config);
+    const d = ds.find((d) => d.rule === "description-too-short");
+    expect(d?.message).toContain("6");
+  });
+
+  it("does not fire description-too-short when frontmatter is invalid", () => {
+    const s = mkSkill("/test/foo/foo.md", { name: "foo" }, "body");
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "description-too-short")).toBeUndefined();
+  });
 });
