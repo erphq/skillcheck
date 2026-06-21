@@ -22,6 +22,7 @@ export const BUILTIN_TOOLS: ReadonlySet<string> = new Set([
   "Read",
   "RemoteTrigger",
   "ScheduleWakeup",
+  "SendUserFile",
   "Skill",
   "SlashCommand",
   "TaskCreate",
