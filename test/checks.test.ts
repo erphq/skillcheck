@@ -599,4 +599,57 @@ describe("runChecks", () => {
     const ds = runChecks([s], config);
     expect(ds.find((d) => d.rule === "description-too-short")).toBeUndefined();
   });
+
+  it("warns when skill file is not named SKILL.md", () => {
+    const s = mkSkill("/test/foo/deploy.md", {
+      name: "foo",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "skill-file-name")).toBe(true);
+  });
+
+  it("does not warn when skill file is named SKILL.md", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "skill-file-name")).toBeUndefined();
+  });
+
+  it("skill-file-name severity is warn", () => {
+    const s = mkSkill("/test/foo/deploy.md", {
+      name: "foo",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    const d = ds.find((d) => d.rule === "skill-file-name");
+    expect(d?.severity).toBe("warn");
+  });
+
+  it("skill-file-name message mentions SKILL.md", () => {
+    const s = mkSkill("/test/foo/deploy.md", {
+      name: "foo",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    const d = ds.find((d) => d.rule === "skill-file-name");
+    expect(d?.message).toContain("SKILL.md");
+  });
+
+  it("warns when skill file is named skill.md (wrong case)", () => {
+    const s = mkSkill("/test/foo/skill.md", {
+      name: "foo",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "skill-file-name")).toBe(true);
+  });
+
+  it("does not fire skill-file-name when frontmatter is invalid", () => {
+    const s = mkSkill("/test/foo/deploy.md", { name: "foo" }, "body");
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "skill-file-name")).toBeUndefined();
+  });
 });
