@@ -221,3 +221,88 @@ describe("applyFixes", () => {
     expect(written).toBe(original);
   });
 });
+
+describe("applyFixes - tool-fields-ambiguous", () => {
+  it("removes the legacy tools: field (block form) when allowed-tools: is also present", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\nname: myskill\ndescription: x\ntools:\n  - Read\nallowed-tools:\n  - Read\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "tool-fields-ambiguous", message: "", file }],
+    );
+    expect(outcome.fixed).toBe(1);
+    expect(outcome.skipped).toBe(0);
+    expect(outcome.filesChanged).toEqual([file]);
+    const written = await readFile(file, "utf8");
+    expect(written).not.toMatch(/^tools[ \t]*:/m);
+    expect(written).toContain("allowed-tools:");
+  });
+
+  it("removes the legacy tools: field (inline form)", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\nname: myskill\ndescription: x\ntools: [Read, Write]\nallowed-tools:\n  - Read\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "tool-fields-ambiguous", message: "", file }],
+    );
+    expect(outcome.fixed).toBe(1);
+    const written = await readFile(file, "utf8");
+    expect(written).not.toMatch(/^tools[ \t]*:/m);
+    expect(written).toContain("allowed-tools:");
+  });
+
+  it("dry run does not write to disk", async () => {
+    const original = `---\nname: myskill\ndescription: x\ntools:\n  - Read\nallowed-tools:\n  - Read\n---\nbody\n`;
+    const file = await writeSkill("myskill/SKILL.md", original);
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "tool-fields-ambiguous", message: "", file }],
+      { dryRun: true },
+    );
+    expect(outcome.fixed).toBe(1);
+    expect(outcome.filesChanged).toEqual([file]);
+    const written = await readFile(file, "utf8");
+    expect(written).toBe(original);
+  });
+
+  it("preserves other frontmatter fields", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\nname: myskill\ndescription: A good description for testing\ntools:\n  - Read\nallowed-tools:\n  - Read\n  - Bash\nmodel: claude-sonnet-4-6\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "tool-fields-ambiguous", message: "", file }],
+    );
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("name: myskill");
+    expect(written).toContain("description: A good description for testing");
+    expect(written).toContain("allowed-tools:");
+    expect(written).toContain("  - Bash");
+    expect(written).toContain("model: claude-sonnet-4-6");
+    expect(written).not.toMatch(/^tools[ \t]*:/m);
+  });
+
+  it("populates notes with a human-readable description", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\nname: myskill\ndescription: x\ntools:\n  - Read\nallowed-tools:\n  - Read\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "tool-fields-ambiguous", message: "", file }],
+    );
+    expect(outcome.notes).toHaveLength(1);
+    expect(outcome.notes[0]).toContain("tool-fields-ambiguous");
+    expect(outcome.notes[0]).toContain("allowed-tools");
+  });
+});

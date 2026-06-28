@@ -36,7 +36,7 @@ program
   .option("--format <fmt>", "output format: text | json | sarif", "text")
   .option(
     "--fix",
-    "apply safe auto-corrections in place (today: name-drift)",
+    "apply safe auto-corrections in place (today: name-drift, tool-fields-ambiguous)",
   )
   .option(
     "--fix-dry-run",
