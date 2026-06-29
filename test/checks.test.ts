@@ -652,4 +652,44 @@ describe("runChecks", () => {
     const ds = runChecks([s], config);
     expect(ds.find((d) => d.rule === "skill-file-name")).toBeUndefined();
   });
+
+  it("combineTools deduplicates a tool listed in both fields", () => {
+    // Read appears in tools and allowed-tools; the unique count is 3,
+    // well below the overloaded threshold of 10.
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      tools: ["Read", "Edit"],
+      "allowed-tools": "Read Write",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "tool-fields-ambiguous")).toBe(true);
+    expect(ds.find((d) => d.rule === "tools-overloaded")).toBeUndefined();
+  });
+
+  it("name-drift comparison is case-insensitive for the directory name", () => {
+    // Directory is 'MySkill'; name is 'myskill' - should match after lowercasing.
+    const s = mkSkill("/test/MySkill/SKILL.md", {
+      name: "myskill",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "name-drift")).toBeUndefined();
+  });
+
+  it("description-collision fires when tokens of one description are a strict subset of another", () => {
+    // A tokens: {deploy, application} (2)
+    // B tokens: {deploy, application, staging} (3)
+    // Jaccard = 2 / 3 = 0.67 >= 0.6
+    const a = mkSkill("/test/a/a.md", { name: "a", description: "deploy the application" });
+    const b = mkSkill("/test/b/b.md", { name: "b", description: "deploy the application to staging" });
+    const ds = runChecks([a, b], config);
+    expect(ds.filter((d) => d.rule === "description-collision").length).toBe(2);
+  });
+
+  it("description-collision does not fire when only one skill is present", () => {
+    const a = mkSkill("/test/a/a.md", { name: "a", description: "deploy the application to staging" });
+    const ds = runChecks([a], config);
+    expect(ds.filter((d) => d.rule === "description-collision").length).toBe(0);
+  });
 });

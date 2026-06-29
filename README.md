@@ -96,6 +96,7 @@ Exit codes:
 | `tool-unknown` | warn | Tool is not a known built-in and not an MCP tool |
 | `mcp-server-unknown` | warn | MCP tool references a server not configured in any `settings.json` |
 | `description-length` | warn | Description longer than 500 chars dilutes the trigger signal |
+| `description-too-short` | warn | Description shorter than 10 chars; too brief to give Claude a reliable trigger signal |
 | `name-drift` | warn | Frontmatter `name:` doesn't match the parent directory |
 | `description-collision` | warn | Two skills' descriptions have Jaccard ≥ 0.6 |
 | `tools-overloaded` | warn | Tool allowlist (`allowed-tools:` or legacy `tools:`) lists 10 or more entries; narrow it to what this skill actually needs |
