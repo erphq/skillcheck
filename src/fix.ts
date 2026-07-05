@@ -32,6 +32,10 @@ export interface FixOptions {
  *     `allowed-tools:` is also present; `allowed-tools:` is the
  *     spec-supported field.
  *
+ *   - `name-whitespace`: replace whitespace characters in the frontmatter
+ *     `name:` value with hyphens. Hyphens are the conventional word
+ *     separator for skill names; spaces make directory matching unreliable.
+ *
  * Returns a structured outcome so the CLI can report what changed
  * without hand-rolling the same logic.
  */
@@ -87,9 +91,26 @@ export async function applyFixes(
       notes.push(
         `${p.file}: tool-fields-ambiguous -> removed legacy tools: field (prefer allowed-tools:)`,
       );
+    } else if (d.rule === "name-whitespace") {
+      const p = fileToParsed.get(d.file);
+      if (!p) {
+        skipped++;
+        continue;
+      }
+      const current = buffer.get(p.file) ?? p.raw;
+      const next = rewriteFrontmatterNameReplaceWhitespace(current);
+      if (next === current) {
+        skipped++;
+        continue;
+      }
+      buffer.set(p.file, next);
+      fixed++;
+      notes.push(
+        `${p.file}: name-whitespace -> replaced whitespace in name with hyphens`,
+      );
     } else {
-      // Only `name-drift` and `tool-fields-ambiguous` have safe automated
-      // fixes today. Other warnings/errors require editorial judgement.
+      // Only the rules above have safe automated fixes today. Other
+      // warnings/errors require editorial judgement.
       if (d.severity !== "info") skipped++;
     }
   }
@@ -120,6 +141,27 @@ function rewriteFrontmatterName(raw: string, value: string): string {
   const newBlock = block.replace(lineRe, (_m, prefix: string) => {
     return `${prefix}${value}`;
   });
+  if (newBlock === block) return raw;
+  return raw.replace(fmMatch[0], `---\n${newBlock}\n---\n`);
+}
+
+/**
+ * Replace whitespace characters in the frontmatter `name:` value with
+ * hyphens. Runs of whitespace collapse to a single hyphen. Returns the
+ * input unchanged if no frontmatter, no `name:` line, or the name
+ * already contains no whitespace.
+ */
+function rewriteFrontmatterNameReplaceWhitespace(raw: string): string {
+  const fmMatch = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+  if (!fmMatch) return raw;
+  const block = fmMatch[1] ?? "";
+  const lineRe = /^(\s*name\s*:\s*)(.*)$/m;
+  const m = block.match(lineRe);
+  if (!m) return raw;
+  const currentName = m[2] ?? "";
+  if (!/\s/.test(currentName)) return raw;
+  const fixedName = currentName.trim().replace(/\s+/g, "-");
+  const newBlock = block.replace(lineRe, (_match, prefix: string) => `${prefix}${fixedName}`);
   if (newBlock === block) return raw;
   return raw.replace(fmMatch[0], `---\n${newBlock}\n---\n`);
 }

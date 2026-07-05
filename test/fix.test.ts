@@ -306,3 +306,96 @@ describe("applyFixes - tool-fields-ambiguous", () => {
     expect(outcome.notes[0]).toContain("allowed-tools");
   });
 });
+
+describe("applyFixes - name-whitespace", () => {
+  it("replaces spaces in name with hyphens", async () => {
+    const file = await writeSkill(
+      "my-skill/SKILL.md",
+      `---\nname: my skill\ndescription: a valid description here\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "name-whitespace", message: "", file }],
+    );
+    expect(outcome.fixed).toBe(1);
+    expect(outcome.skipped).toBe(0);
+    expect(outcome.filesChanged).toEqual([file]);
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("name: my-skill");
+    expect(written).not.toContain("name: my skill");
+  });
+
+  it("replaces tabs in name with hyphens", async () => {
+    const file = await writeSkill(
+      "my-skill/SKILL.md",
+      `---\nname: my\tskill\ndescription: a valid description here\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "name-whitespace", message: "", file }],
+    );
+    expect(outcome.fixed).toBe(1);
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("name: my-skill");
+  });
+
+  it("collapses multiple consecutive whitespace chars to a single hyphen", async () => {
+    const file = await writeSkill(
+      "my-skill/SKILL.md",
+      `---\nname: my  skill  name\ndescription: a valid description here\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "name-whitespace", message: "", file }],
+    );
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("name: my-skill-name");
+  });
+
+  it("skips when name contains no whitespace", async () => {
+    const original = `---\nname: myskill\ndescription: a valid description here\n---\nbody\n`;
+    const file = await writeSkill("myskill/SKILL.md", original);
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "name-whitespace", message: "", file }],
+    );
+    expect(outcome.fixed).toBe(0);
+    expect(outcome.skipped).toBe(1);
+    const written = await readFile(file, "utf8");
+    expect(written).toBe(original);
+  });
+
+  it("dry run does not write to disk", async () => {
+    const original = `---\nname: my skill\ndescription: a valid description here\n---\nbody\n`;
+    const file = await writeSkill("my-skill/SKILL.md", original);
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "name-whitespace", message: "", file }],
+      { dryRun: true },
+    );
+    expect(outcome.fixed).toBe(1);
+    expect(outcome.filesChanged).toEqual([file]);
+    const written = await readFile(file, "utf8");
+    expect(written).toBe(original);
+  });
+
+  it("populates notes with a human-readable description", async () => {
+    const file = await writeSkill(
+      "my-skill/SKILL.md",
+      `---\nname: my skill\ndescription: a valid description here\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "name-whitespace", message: "", file }],
+    );
+    expect(outcome.notes).toHaveLength(1);
+    expect(outcome.notes[0]).toContain("name-whitespace");
+    expect(outcome.notes[0]).toContain("hyphen");
+  });
+});
