@@ -508,6 +508,16 @@ describe("runChecks", () => {
     expect(ds.find((d) => d.rule === "model-unknown")).toBeUndefined();
   });
 
+  it("does not warn on claude-sonnet-5", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+      model: "claude-sonnet-5",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "model-unknown")).toBeUndefined();
+  });
+
   it("warns on a plausible-looking model typo", () => {
     const s = mkSkill("/test/foo/foo.md", {
       name: "foo",
