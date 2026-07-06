@@ -27,6 +27,7 @@ const KNOWN_CLAUDE_MODELS: ReadonlySet<string> = new Set([
   "claude-haiku-4-5-20251001",
   "claude-opus-4-8",
   "claude-sonnet-4-6",
+  "claude-sonnet-5",
   "claude-fable-5",
 ]);
 
