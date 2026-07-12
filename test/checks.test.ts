@@ -702,4 +702,60 @@ describe("runChecks", () => {
     const ds = runChecks([a], config);
     expect(ds.filter((d) => d.rule === "description-collision").length).toBe(0);
   });
+
+  it("does not warn on description-length at exactly 500 chars", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "a".repeat(500),
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "description-length")).toBeUndefined();
+  });
+
+  it("warns on description-length at exactly 501 chars", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "a".repeat(501),
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "description-length")).toBe(true);
+  });
+
+  it("description-length message includes the char count", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "a".repeat(501),
+    });
+    const ds = runChecks([s], config);
+    const d = ds.find((d) => d.rule === "description-length");
+    expect(d?.message).toContain("501");
+  });
+
+  it("does not warn model-unknown when model is empty string", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+      model: "",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "model-unknown")).toBeUndefined();
+  });
+
+  it("description-collision fires 6 diagnostics when all three skills pairwise collide", () => {
+    // Each pair shares 5 of 7 tokens -> Jaccard 5/7 >= 0.6; 3 pairs x 2 diagnostics = 6
+    const a = mkSkill("/test/a/a.md", { name: "a", description: "deploy the application to staging environment fast" });
+    const b = mkSkill("/test/b/b.md", { name: "b", description: "deploy the application to staging environment slow" });
+    const c = mkSkill("/test/c/c.md", { name: "c", description: "deploy the application to staging environment quick" });
+    const ds = runChecks([a, b, c], config);
+    expect(ds.filter((d) => d.rule === "description-collision").length).toBe(6);
+  });
+
+  it("description-collision fires only for the colliding pair in a three-skill set", () => {
+    // A and B share 4 of 6 tokens -> Jaccard 4/6 = 0.67 (collides); C is unrelated
+    const a = mkSkill("/test/a/a.md", { name: "a", description: "deploy the application to staging environment" });
+    const b = mkSkill("/test/b/b.md", { name: "b", description: "deploy the application to production environment" });
+    const c = mkSkill("/test/c/c.md", { name: "c", description: "search repositories for open pull requests" });
+    const ds = runChecks([a, b, c], config);
+    expect(ds.filter((d) => d.rule === "description-collision").length).toBe(2);
+  });
 });
