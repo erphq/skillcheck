@@ -758,4 +758,62 @@ describe("runChecks", () => {
     const ds = runChecks([a, b, c], config);
     expect(ds.filter((d) => d.rule === "description-collision").length).toBe(2);
   });
+
+  it("warns when allowed-tools lists the same tool twice", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      "allowed-tools": "Read Edit Read",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "tools-duplicate")).toBe(true);
+  });
+
+  it("warns when legacy tools array contains a duplicate", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      tools: ["Read", "Edit", "Read"],
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "tools-duplicate")).toBe(true);
+  });
+
+  it("tools-duplicate message includes the duplicated tool name", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      "allowed-tools": "Read Edit Read",
+    });
+    const ds = runChecks([s], config);
+    const d = ds.find((d) => d.rule === "tools-duplicate");
+    expect(d?.message).toContain("Read");
+  });
+
+  it("does not warn tools-duplicate when each tool appears once", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      "allowed-tools": "Read Edit Write",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "tools-duplicate")).toBeUndefined();
+  });
+
+  it("does not warn tools-duplicate when a tool appears in both fields but not twice in one", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      tools: ["Read", "Edit"],
+      "allowed-tools": "Read Write",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "tools-duplicate")).toBeUndefined();
+  });
+
+  it("does not fire tools-duplicate when frontmatter is invalid", () => {
+    const s = mkSkill("/test/foo/SKILL.md", { name: "foo" }, "body");
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "tools-duplicate")).toBeUndefined();
+  });
 });

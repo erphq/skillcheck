@@ -49,6 +49,7 @@ export function runChecks(
 
     diagnostics.push(...checkSkillFileName(v));
     diagnostics.push(...checkToolFieldsAmbiguous(v));
+    diagnostics.push(...checkToolsDuplicate(p));
     diagnostics.push(...checkTools(v, config));
     diagnostics.push(...checkToolsOverloaded(v));
     diagnostics.push(...checkDescriptionLength(v));
@@ -112,6 +113,34 @@ function checkSkillFileName(v: ValidatedSkill): Diagnostic[] {
       file: v.file,
     },
   ];
+}
+
+function checkToolsDuplicate(p: ParsedSkill): Diagnostic[] {
+  const result = SkillFrontmatter.safeParse(p.frontmatter);
+  if (!result.success) return [];
+
+  const out: Diagnostic[] = [];
+
+  function warnDupes(tools: string[] | undefined, field: string): void {
+    if (!tools || tools.length === 0) return;
+    const seen = new Set<string>();
+    for (const tool of tools) {
+      if (seen.has(tool)) {
+        out.push({
+          severity: "warn",
+          rule: "tools-duplicate",
+          message: `tool '${tool}' appears more than once in ${field}; remove the duplicate entry`,
+          file: p.file,
+        });
+        return;
+      }
+      seen.add(tool);
+    }
+  }
+
+  warnDupes(result.data.tools, "tools");
+  warnDupes(result.data["allowed-tools"], "allowed-tools");
+  return out;
 }
 
 function checkToolFieldsAmbiguous(v: ValidatedSkill): Diagnostic[] {
