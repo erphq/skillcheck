@@ -116,6 +116,14 @@ export const RULES: readonly SarifRule[] = [
     defaultLevel: "warning",
   },
   {
+    id: "tools-duplicate",
+    name: "toolsDuplicate",
+    shortDescription:
+      "The same tool is listed more than once in a single tool field; the duplicate has no effect.",
+    helpUri: HELP_BASE,
+    defaultLevel: "warning",
+  },
+  {
     id: "skill-file-name",
     name: "skillFileName",
     shortDescription:
