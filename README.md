@@ -101,6 +101,8 @@ Exit codes:
 | `description-collision` | warn | Two skills' descriptions have Jaccard ≥ 0.6 |
 | `tools-overloaded` | warn | Tool allowlist (`allowed-tools:` or legacy `tools:`) lists 10 or more entries; narrow it to what this skill actually needs |
 | `tool-fields-ambiguous` | warn | Both `allowed-tools:` and legacy `tools:` are present; prefer the spec-supported `allowed-tools:` field |
+| `deprecated-tools-field` | warn | Only the legacy `tools:` field is present; migrate to `allowed-tools:` which is the spec-supported tool allowlist |
+| `tools-duplicate` | warn | The same tool string appears more than once in `allowed-tools:` or `tools:`; remove the duplicate entry |
 | `skill-file-name` | warn | Skill file is not named `SKILL.md`; Agent Skills packages are directories containing a `SKILL.md` file |
 | `duplicate-name` | warn | Two or more skills share the same `name:` value; resolution is ambiguous |
 | `empty-body` | warn | Skill body has no instructions; Claude has nothing to follow |

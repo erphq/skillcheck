@@ -49,6 +49,7 @@ export function runChecks(
 
     diagnostics.push(...checkSkillFileName(v));
     diagnostics.push(...checkToolFieldsAmbiguous(v));
+    diagnostics.push(...checkDeprecatedToolsField(v));
     diagnostics.push(...checkToolsDuplicate(p));
     diagnostics.push(...checkTools(v, config));
     diagnostics.push(...checkToolsOverloaded(v));
@@ -113,6 +114,24 @@ function checkSkillFileName(v: ValidatedSkill): Diagnostic[] {
       file: v.file,
     },
   ];
+}
+
+function checkDeprecatedToolsField(v: ValidatedSkill): Diagnostic[] {
+  if (
+    v.frontmatter.tools !== undefined &&
+    v.frontmatter["allowed-tools"] === undefined
+  ) {
+    return [
+      {
+        severity: "warn",
+        rule: "deprecated-tools-field",
+        message:
+          "tools: is a legacy field; migrate to allowed-tools: which is the spec-supported tool allowlist",
+        file: v.file,
+      },
+    ];
+  }
+  return [];
 }
 
 function checkToolsDuplicate(p: ParsedSkill): Diagnostic[] {
