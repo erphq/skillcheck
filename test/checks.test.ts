@@ -210,7 +210,7 @@ describe("runChecks", () => {
     const s = mkSkill("/test/foo/SKILL.md", {
       name: "foo",
       description: "do the foo thing",
-      tools: ["Read", "Edit"],
+      "allowed-tools": "Read Edit",
     });
     const ds = runChecks([s], config);
     expect(ds).toEqual([]);
@@ -815,5 +815,74 @@ describe("runChecks", () => {
     const s = mkSkill("/test/foo/SKILL.md", { name: "foo" }, "body");
     const ds = runChecks([s], config);
     expect(ds.find((d) => d.rule === "tools-duplicate")).toBeUndefined();
+  });
+
+  it("warns when only the legacy tools: field is used without allowed-tools:", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      tools: ["Read", "Edit"],
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "deprecated-tools-field")).toBe(true);
+  });
+
+  it("does not warn deprecated-tools-field when allowed-tools: is used alone", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      "allowed-tools": "Read Edit",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "deprecated-tools-field")).toBeUndefined();
+  });
+
+  it("does not warn deprecated-tools-field when both fields are present (tool-fields-ambiguous fires instead)", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      tools: ["Read"],
+      "allowed-tools": "Edit",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "deprecated-tools-field")).toBeUndefined();
+    expect(ds.some((d) => d.rule === "tool-fields-ambiguous")).toBe(true);
+  });
+
+  it("does not warn deprecated-tools-field when no tool field is present", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "deprecated-tools-field")).toBeUndefined();
+  });
+
+  it("deprecated-tools-field severity is warn", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+      tools: ["Read"],
+    });
+    const ds = runChecks([s], config);
+    const d = ds.find((d) => d.rule === "deprecated-tools-field");
+    expect(d?.severity).toBe("warn");
+  });
+
+  it("deprecated-tools-field message mentions allowed-tools:", () => {
+    const s = mkSkill("/test/foo/foo.md", {
+      name: "foo",
+      description: "do the foo thing",
+      tools: ["Read"],
+    });
+    const ds = runChecks([s], config);
+    const d = ds.find((d) => d.rule === "deprecated-tools-field");
+    expect(d?.message).toContain("allowed-tools:");
+  });
+
+  it("does not fire deprecated-tools-field when frontmatter is invalid", () => {
+    const s = mkSkill("/test/foo/SKILL.md", { name: "foo" }, "body");
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "deprecated-tools-field")).toBeUndefined();
   });
 });
