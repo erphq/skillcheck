@@ -399,3 +399,103 @@ describe("applyFixes - name-whitespace", () => {
     expect(outcome.notes[0]).toContain("hyphen");
   });
 });
+
+describe("applyFixes - deprecated-tools-field", () => {
+  it("renames tools: to allowed-tools: (block form)", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\nname: myskill\ndescription: a good description here\ntools:\n  - Read\n  - Bash\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "deprecated-tools-field", message: "", file }],
+    );
+    expect(outcome.fixed).toBe(1);
+    expect(outcome.skipped).toBe(0);
+    expect(outcome.filesChanged).toEqual([file]);
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("allowed-tools:");
+    expect(written).toContain("  - Read");
+    expect(written).toContain("  - Bash");
+    expect(written).not.toMatch(/^tools[ \t]*:/m);
+  });
+
+  it("renames tools: to allowed-tools: (inline form)", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\nname: myskill\ndescription: a good description here\ntools: [Read, Write]\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "deprecated-tools-field", message: "", file }],
+    );
+    expect(outcome.fixed).toBe(1);
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("allowed-tools: [Read, Write]");
+    expect(written).not.toMatch(/^tools[ \t]*:/m);
+  });
+
+  it("preserves all other frontmatter fields", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\nname: myskill\ndescription: a good description here\ntools:\n  - Read\nmodel: claude-sonnet-4-6\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "deprecated-tools-field", message: "", file }],
+    );
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("name: myskill");
+    expect(written).toContain("description: a good description here");
+    expect(written).toContain("model: claude-sonnet-4-6");
+    expect(written).toContain("allowed-tools:");
+    expect(written).toContain("  - Read");
+  });
+
+  it("dry run does not write to disk", async () => {
+    const original = `---\nname: myskill\ndescription: a good description here\ntools:\n  - Read\n---\nbody\n`;
+    const file = await writeSkill("myskill/SKILL.md", original);
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "deprecated-tools-field", message: "", file }],
+      { dryRun: true },
+    );
+    expect(outcome.fixed).toBe(1);
+    expect(outcome.filesChanged).toEqual([file]);
+    const written = await readFile(file, "utf8");
+    expect(written).toBe(original);
+  });
+
+  it("skips when no tools: field is present", async () => {
+    const original = `---\nname: myskill\ndescription: a good description here\n---\nbody\n`;
+    const file = await writeSkill("myskill/SKILL.md", original);
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "deprecated-tools-field", message: "", file }],
+    );
+    expect(outcome.fixed).toBe(0);
+    expect(outcome.skipped).toBe(1);
+    const written = await readFile(file, "utf8");
+    expect(written).toBe(original);
+  });
+
+  it("populates notes with a human-readable description", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\nname: myskill\ndescription: a good description here\ntools:\n  - Read\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "deprecated-tools-field", message: "", file }],
+    );
+    expect(outcome.notes).toHaveLength(1);
+    expect(outcome.notes[0]).toContain("deprecated-tools-field");
+    expect(outcome.notes[0]).toContain("allowed-tools");
+  });
+});

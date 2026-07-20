@@ -36,6 +36,11 @@ export interface FixOptions {
  *     `name:` value with hyphens. Hyphens are the conventional word
  *     separator for skill names; spaces make directory matching unreliable.
  *
+ *   - `deprecated-tools-field`: rename the legacy `tools:` key to
+ *     `allowed-tools:` when only `tools:` is present (no `allowed-tools:`).
+ *     The key, its colon, and any trailing whitespace on that line are
+ *     rewritten in place; all indented list items are preserved as-is.
+ *
  * Returns a structured outcome so the CLI can report what changed
  * without hand-rolling the same logic.
  */
@@ -107,6 +112,23 @@ export async function applyFixes(
       fixed++;
       notes.push(
         `${p.file}: name-whitespace -> replaced whitespace in name with hyphens`,
+      );
+    } else if (d.rule === "deprecated-tools-field") {
+      const p = fileToParsed.get(d.file);
+      if (!p) {
+        skipped++;
+        continue;
+      }
+      const current = buffer.get(p.file) ?? p.raw;
+      const next = rewriteFrontmatterRenameToolsToAllowedTools(current);
+      if (next === current) {
+        skipped++;
+        continue;
+      }
+      buffer.set(p.file, next);
+      fixed++;
+      notes.push(
+        `${p.file}: deprecated-tools-field -> renamed tools: to allowed-tools:`,
       );
     } else {
       // Only the rules above have safe automated fixes today. Other
@@ -185,6 +207,25 @@ function rewriteFrontmatterRemoveLegacyTools(raw: string): string {
     .replace(toolsRe, "")
     .replace(/(?:\r?\n){2,}/g, "\n")
     .replace(/^\n/, "");
+  if (newBlock === block) return raw;
+  return raw.replace(fmMatch[0], `---\n${newBlock}\n---\n`);
+}
+
+/**
+ * Rename the `tools:` key to `allowed-tools:` in the YAML frontmatter.
+ * Called when only the legacy `tools:` field is present (`deprecated-tools-field`
+ * diagnostic). The key is replaced in-place so all list items and
+ * surrounding formatting are preserved. Returns the input unchanged if no
+ * frontmatter or no `tools:` line is found.
+ */
+function rewriteFrontmatterRenameToolsToAllowedTools(raw: string): string {
+  const fmMatch = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+  if (!fmMatch) return raw;
+  const block = fmMatch[1] ?? "";
+  // Match only the `tools:` key line itself; leave indented list items alone.
+  const toolsKeyRe = /^([ \t]*)tools([ \t]*:)/m;
+  if (!toolsKeyRe.test(block)) return raw;
+  const newBlock = block.replace(toolsKeyRe, "$1allowed-tools$2");
   if (newBlock === block) return raw;
   return raw.replace(fmMatch[0], `---\n${newBlock}\n---\n`);
 }
