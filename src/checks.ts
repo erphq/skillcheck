@@ -320,13 +320,16 @@ function checkModelUnknown(v: ValidatedSkill): Diagnostic[] {
 function checkEffortUnknown(v: ValidatedSkill): Diagnostic[] {
   const effort = v.frontmatter.effort;
   if (effort === undefined) return [];
-  if (typeof effort !== "string" || effort.length === 0) return [];
-  if (KNOWN_EFFORT_LEVELS.has(effort)) return [];
+  if (typeof effort === "string" && KNOWN_EFFORT_LEVELS.has(effort)) return [];
+  const display =
+    typeof effort === "string"
+      ? `'${effort}'`
+      : `(${typeof effort})`;
   return [
     {
       severity: "warn",
       rule: "effort-unknown",
-      message: `effort '${effort}' is not a recognized level; expected one of: low, medium, high, xhigh, max`,
+      message: `effort ${display} is not a recognized level; expected one of: low, medium, high, xhigh, max`,
       file: v.file,
     },
   ];

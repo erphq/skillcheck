@@ -7,7 +7,7 @@
 **Lint the manifest. Verify the refs. Catch the collisions before runtime.**
 
 [![ci](https://github.com/erphq/skillcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/erphq/skillcheck/actions/workflows/ci.yml)
-![tests](https://img.shields.io/badge/tests-87%20passing-yellowgreen)
+![tests](https://img.shields.io/badge/tests-89%20passing-yellowgreen)
 
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![status](https://img.shields.io/badge/status-v0.6.0-orange.svg)](#roadmap)
@@ -98,7 +98,7 @@ Exit codes:
 | `description-length` | warn | Description longer than 500 chars dilutes the trigger signal |
 | `description-too-short` | warn | Description shorter than 10 chars; too brief to give Claude a reliable trigger signal |
 | `name-drift` | warn | Frontmatter `name:` doesn't match the parent directory |
-| `description-collision` | warn | Two skills' descriptions have Jaccard ≥ 0.6 |
+| `description-collision` | warn | Two skills' descriptions have Jaccard >= 0.6 |
 | `tools-overloaded` | warn | Tool allowlist (`allowed-tools:` or legacy `tools:`) lists 10 or more entries; narrow it to what this skill actually needs |
 | `tool-fields-ambiguous` | warn | Both `allowed-tools:` and legacy `tools:` are present; prefer the spec-supported `allowed-tools:` field |
 | `deprecated-tools-field` | warn | Only the legacy `tools:` field is present; migrate to `allowed-tools:` which is the spec-supported tool allowlist |
@@ -233,7 +233,7 @@ collide on triggers? Stylistic checks belong upstream of `skillcheck`.
 - [x] v0.0 - scaffold, schema, structure
 - [x] v0.1 - frontmatter schema + tool ref check + tests
 - [x] v0.2 - MCP server ref check
-- [x] v0.3 - description collision detector (Jaccard ≥ 0.6)
+- [x] v0.3 - description collision detector (Jaccard >= 0.6)
 - [x] v0.4 - SARIF 2.1.0 output for GitHub Code Scanning
 - [x] v0.5 - npm publish + GitHub Actions release workflow (`--provenance`); CHANGELOG.md
 - [x] v0.6 - `--fix` mode for safe auto-corrections (today: `name-drift`); plugin API

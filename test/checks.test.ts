@@ -955,14 +955,14 @@ describe("runChecks", () => {
     expect(ds.find((d) => d.rule === "effort-unknown")).toBeUndefined();
   });
 
-  it("does not warn when effort is an empty string", () => {
+  it("warns when effort is an empty string", () => {
     const s = mkSkill("/test/foo/SKILL.md", {
       name: "foo",
       description: "do the foo thing",
       effort: "",
     });
     const ds = runChecks([s], config);
-    expect(ds.find((d) => d.rule === "effort-unknown")).toBeUndefined();
+    expect(ds.some((d) => d.rule === "effort-unknown")).toBe(true);
   });
 
   it("effort-unknown message includes the offending value", () => {
@@ -980,5 +980,25 @@ describe("runChecks", () => {
     const s = mkSkill("/test/foo/SKILL.md", { name: "foo" }, "body");
     const ds = runChecks([s], config);
     expect(ds.find((d) => d.rule === "effort-unknown")).toBeUndefined();
+  });
+
+  it("warns when effort is a non-string number value", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      effort: 123,
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "effort-unknown")).toBe(true);
+  });
+
+  it("warns when effort is a non-string object value", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      effort: {},
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "effort-unknown")).toBe(true);
   });
 });
