@@ -7,7 +7,7 @@
 **Lint the manifest. Verify the refs. Catch the collisions before runtime.**
 
 [![ci](https://github.com/erphq/skillcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/erphq/skillcheck/actions/workflows/ci.yml)
-![tests](https://img.shields.io/badge/tests-77%20passing-yellowgreen)
+![tests](https://img.shields.io/badge/tests-87%20passing-yellowgreen)
 
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![status](https://img.shields.io/badge/status-v0.6.0-orange.svg)](#roadmap)
@@ -107,6 +107,7 @@ Exit codes:
 | `duplicate-name` | warn | Two or more skills share the same `name:` value; resolution is ambiguous |
 | `empty-body` | warn | Skill body has no instructions; Claude has nothing to follow |
 | `model-unknown` | warn | `model:` value is not a recognized Claude model ID; likely a typo |
+| `effort-unknown` | warn | `effort:` value is not a recognized reasoning effort level; expected one of `low`, `medium`, `high`, `xhigh`, `max` |
 | `parse` | error | The file doesn't have valid frontmatter / YAML |
 
 The MCP and built-in tool checks read `~/.claude/settings.json` and

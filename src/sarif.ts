@@ -155,6 +155,14 @@ export const RULES: readonly SarifRule[] = [
     helpUri: HELP_BASE,
     defaultLevel: "warning",
   },
+  {
+    id: "effort-unknown",
+    name: "effortUnknown",
+    shortDescription:
+      "The effort: value is not a recognized reasoning effort level; expected one of: low, medium, high, xhigh, max.",
+    helpUri: HELP_BASE,
+    defaultLevel: "warning",
+  },
 ];
 
 const SEVERITY_TO_LEVEL: Record<Severity, SarifLevel> = {

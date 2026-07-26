@@ -31,6 +31,15 @@ const KNOWN_CLAUDE_MODELS: ReadonlySet<string> = new Set([
   "claude-fable-5",
 ]);
 
+// Recognized reasoning effort levels for the effort: frontmatter field.
+const KNOWN_EFFORT_LEVELS: ReadonlySet<string> = new Set([
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+]);
+
 export function runChecks(
   parsed: ParsedSkill[],
   config: SkillcheckConfig,
@@ -59,6 +68,7 @@ export function runChecks(
     diagnostics.push(...checkNameWhitespace(v));
     diagnostics.push(...checkEmptyBody(v));
     diagnostics.push(...checkModelUnknown(v));
+    diagnostics.push(...checkEffortUnknown(v));
   }
 
   diagnostics.push(...checkCollisions(validated));
@@ -302,6 +312,21 @@ function checkModelUnknown(v: ValidatedSkill): Diagnostic[] {
       severity: "warn",
       rule: "model-unknown",
       message: `model '${model}' is not a recognized Claude model; check for typos or update skillcheck`,
+      file: v.file,
+    },
+  ];
+}
+
+function checkEffortUnknown(v: ValidatedSkill): Diagnostic[] {
+  const effort = v.frontmatter.effort;
+  if (effort === undefined) return [];
+  if (typeof effort !== "string" || effort.length === 0) return [];
+  if (KNOWN_EFFORT_LEVELS.has(effort)) return [];
+  return [
+    {
+      severity: "warn",
+      rule: "effort-unknown",
+      message: `effort '${effort}' is not a recognized level; expected one of: low, medium, high, xhigh, max`,
       file: v.file,
     },
   ];
