@@ -499,3 +499,86 @@ describe("applyFixes - deprecated-tools-field", () => {
     expect(outcome.notes[0]).toContain("allowed-tools");
   });
 });
+
+describe("applyFixes - tools-duplicate", () => {
+  it("removes a duplicate from allowed-tools space-separated string", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\nname: myskill\ndescription: A valid skill description\nallowed-tools: Read Bash Read\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "tools-duplicate", message: "tool 'Read' appears more than once in allowed-tools", file }],
+    );
+    expect(outcome.fixed).toBe(1);
+    expect(outcome.skipped).toBe(0);
+    expect(outcome.filesChanged).toEqual([file]);
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("allowed-tools: Read Bash");
+    expect(written).not.toMatch(/Read Bash Read/);
+  });
+
+  it("removes duplicates from a tools: block sequence", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\nname: myskill\ndescription: A valid skill description\ntools:\n  - Read\n  - Bash\n  - Read\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "tools-duplicate", message: "tool 'Read' appears more than once in tools", file }],
+    );
+    expect(outcome.fixed).toBe(1);
+    expect(outcome.filesChanged).toEqual([file]);
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("  - Read");
+    expect(written).toContain("  - Bash");
+    const readCount = (written.match(/  - Read/g) ?? []).length;
+    expect(readCount).toBe(1);
+  });
+
+  it("skips when no textual duplicates are found (already clean)", async () => {
+    const original = `---\nname: myskill\ndescription: A valid skill description\nallowed-tools: Read Bash\n---\nbody\n`;
+    const file = await writeSkill("myskill/SKILL.md", original);
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "tools-duplicate", message: "", file }],
+    );
+    expect(outcome.fixed).toBe(0);
+    expect(outcome.skipped).toBe(1);
+    const written = await readFile(file, "utf8");
+    expect(written).toBe(original);
+  });
+
+  it("dry run does not write to disk", async () => {
+    const original = `---\nname: myskill\ndescription: A valid skill description\nallowed-tools: Read Bash Read\n---\nbody\n`;
+    const file = await writeSkill("myskill/SKILL.md", original);
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "tools-duplicate", message: "", file }],
+      { dryRun: true },
+    );
+    expect(outcome.fixed).toBe(1);
+    expect(outcome.filesChanged).toEqual([file]);
+    const written = await readFile(file, "utf8");
+    expect(written).toBe(original);
+  });
+
+  it("populates notes with a human-readable description", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\nname: myskill\ndescription: A valid skill description\nallowed-tools: Read Bash Read\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "tools-duplicate", message: "", file }],
+    );
+    expect(outcome.notes).toHaveLength(1);
+    expect(outcome.notes[0]).toContain("tools-duplicate");
+    expect(outcome.notes[0]).toContain("duplicate");
+  });
+});
