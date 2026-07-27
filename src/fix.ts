@@ -41,6 +41,10 @@ export interface FixOptions {
  *     The key, its colon, and any trailing whitespace on that line are
  *     rewritten in place; all indented list items are preserved as-is.
  *
+ *   - `tools-duplicate`: remove duplicate entries from `allowed-tools:` (string
+ *     form) and the legacy `tools:` field (block sequence or string form),
+ *     preserving first-occurrence order.
+ *
  * Returns a structured outcome so the CLI can report what changed
  * without hand-rolling the same logic.
  */
@@ -130,6 +134,21 @@ export async function applyFixes(
       notes.push(
         `${p.file}: deprecated-tools-field -> renamed tools: to allowed-tools:`,
       );
+    } else if (d.rule === "tools-duplicate") {
+      const p = fileToParsed.get(d.file);
+      if (!p) {
+        skipped++;
+        continue;
+      }
+      const current = buffer.get(p.file) ?? p.raw;
+      const next = rewriteDeduplicateTools(current);
+      if (next === current) {
+        skipped++;
+        continue;
+      }
+      buffer.set(p.file, next);
+      fixed++;
+      notes.push(`${p.file}: tools-duplicate -> removed duplicate tool entries`);
     } else {
       // Only the rules above have safe automated fixes today. Other
       // warnings/errors require editorial judgement.
@@ -209,6 +228,113 @@ function rewriteFrontmatterRemoveLegacyTools(raw: string): string {
     .replace(/^\n/, "");
   if (newBlock === block) return raw;
   return raw.replace(fmMatch[0], `---\n${newBlock}\n---\n`);
+}
+
+/**
+ * Remove duplicate tool entries from `allowed-tools:` and the legacy `tools:`
+ * field. Handles:
+ *   - `allowed-tools:` as an unquoted space- or comma-separated string.
+ *   - `tools:` as a YAML block sequence (`- item` lines).
+ *   - `tools:` as an unquoted space- or comma-separated string.
+ * Quoted string values and other forms are left unchanged (no safe parse).
+ */
+function rewriteDeduplicateTools(raw: string): string {
+  const fmMatch = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
+  if (!fmMatch) return raw;
+  const block = fmMatch[1] ?? "";
+  let newBlock = block;
+
+  // allowed-tools is always a string per schema; handle unquoted inline form.
+  newBlock = deduplicateToolsStringLine(newBlock, "allowed-tools");
+  // tools (legacy) may be a block sequence or an unquoted string.
+  newBlock = deduplicateToolsBlockSequence(newBlock, "tools");
+  newBlock = deduplicateToolsStringLine(newBlock, "tools");
+
+  if (newBlock === block) return raw;
+  return raw.replace(fmMatch[0], `---\n${newBlock}\n---\n`);
+}
+
+function splitAllowlistString(value: string): string[] {
+  const out: string[] = [];
+  let current = "";
+  let depth = 0;
+  for (const ch of value) {
+    if (ch === "(") depth++;
+    else if (ch === ")" && depth > 0) depth--;
+    else if ((ch === "," || /\s/.test(ch)) && depth === 0) {
+      const t = current.trim();
+      if (t) out.push(t);
+      current = "";
+      continue;
+    }
+    current += ch;
+  }
+  const t = current.trim();
+  if (t) out.push(t);
+  return out;
+}
+
+function deduplicatePreserveOrder(tools: string[]): string[] {
+  const seen = new Set<string>();
+  return tools.filter((t) => {
+    if (seen.has(t)) return false;
+    seen.add(t);
+    return true;
+  });
+}
+
+/**
+ * Deduplicate an unquoted space- or comma-separated tool list on a single
+ * YAML line. Quoted values are left unchanged (safe-parse is not feasible).
+ */
+function deduplicateToolsStringLine(block: string, field: string): string {
+  const re = new RegExp(`^([ \\t]*${field}[ \\t]*:[ \\t]*)([^\\[\\r\\n].*)$`, "m");
+  const m = block.match(re);
+  if (!m) return block;
+  const prefix = m[1] ?? "";
+  const valueRaw = (m[2] ?? "").trim();
+  if (!valueRaw || valueRaw.startsWith('"') || valueRaw.startsWith("'")) return block;
+  const tools = splitAllowlistString(valueRaw);
+  const deduped = deduplicatePreserveOrder(tools);
+  if (deduped.length === tools.length) return block;
+  const sep = valueRaw.includes(",") ? ", " : " ";
+  return block.replace(re, `${prefix}${deduped.join(sep)}`);
+}
+
+/**
+ * Deduplicate items in a YAML block sequence under `field`. Processes only
+ * contiguous `  - item` lines immediately following the key line; stops at
+ * any non-sequence line (blank line, comment, next key).
+ */
+function deduplicateToolsBlockSequence(block: string, field: string): string {
+  const headRe = new RegExp(`(^[ \\t]*${field}[ \\t]*:[ \\t]*)(\\r?\\n)`, "m");
+  const headMatch = block.match(headRe);
+  if (!headMatch || headMatch.index === undefined) return block;
+
+  const afterHead = headMatch.index + headMatch[0].length;
+  let pos = afterHead;
+  const seen = new Set<string>();
+  let changed = false;
+  const kept: string[] = [];
+
+  while (pos < block.length) {
+    const remaining = block.slice(pos);
+    const lineMatch = remaining.match(/^([ \t]+-[ \t]*)([^\r\n]*)(\r?\n|$)/);
+    if (!lineMatch) break;
+    const itemIndent = lineMatch[1] ?? "";
+    const item = (lineMatch[2] ?? "").trim();
+    const eol = lineMatch[3] ?? "";
+    if (seen.has(item)) {
+      changed = true;
+    } else {
+      seen.add(item);
+      kept.push(`${itemIndent}${item}${eol}`);
+    }
+    pos += lineMatch[0].length;
+  }
+
+  if (!changed) return block;
+  return block.slice(0, afterHead) + kept.join("") + block.slice(pos);
 }
 
 /**
