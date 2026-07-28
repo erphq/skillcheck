@@ -885,4 +885,120 @@ describe("runChecks", () => {
     const ds = runChecks([s], config);
     expect(ds.find((d) => d.rule === "deprecated-tools-field")).toBeUndefined();
   });
+
+  it("warns on an unrecognized effort value", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      effort: "fast",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "effort-unknown")).toBe(true);
+  });
+
+  it("does not warn when effort is 'low'", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      effort: "low",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "effort-unknown")).toBeUndefined();
+  });
+
+  it("does not warn when effort is 'medium'", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      effort: "medium",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "effort-unknown")).toBeUndefined();
+  });
+
+  it("does not warn when effort is 'high'", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      effort: "high",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "effort-unknown")).toBeUndefined();
+  });
+
+  it("does not warn when effort is 'xhigh'", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      effort: "xhigh",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "effort-unknown")).toBeUndefined();
+  });
+
+  it("does not warn when effort is 'max'", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      effort: "max",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "effort-unknown")).toBeUndefined();
+  });
+
+  it("does not warn when effort field is absent", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "effort-unknown")).toBeUndefined();
+  });
+
+  it("warns when effort is an empty string", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      effort: "",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "effort-unknown")).toBe(true);
+  });
+
+  it("effort-unknown message includes the offending value", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      effort: "turbo",
+    });
+    const ds = runChecks([s], config);
+    const d = ds.find((d) => d.rule === "effort-unknown");
+    expect(d?.message).toContain("turbo");
+  });
+
+  it("does not fire effort-unknown when frontmatter is invalid", () => {
+    const s = mkSkill("/test/foo/SKILL.md", { name: "foo" }, "body");
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "effort-unknown")).toBeUndefined();
+  });
+
+  it("warns when effort is a non-string number value", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      effort: 123,
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "effort-unknown")).toBe(true);
+  });
+
+  it("warns when effort is a non-string object value", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      effort: {},
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "effort-unknown")).toBe(true);
+  });
 });
