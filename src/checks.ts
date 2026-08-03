@@ -29,6 +29,7 @@ const KNOWN_CLAUDE_MODELS: ReadonlySet<string> = new Set([
   "claude-sonnet-4-6",
   "claude-sonnet-5",
   "claude-fable-5",
+  "claude-opus-5",
 ]);
 
 // Recognized reasoning effort levels for the effort: frontmatter field.
