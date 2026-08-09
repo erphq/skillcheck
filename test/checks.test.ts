@@ -1011,4 +1011,22 @@ describe("runChecks", () => {
     const ds = runChecks([s], config);
     expect(ds.some((d) => d.rule === "effort-unknown")).toBe(true);
   });
+
+  it("description-collision does not fire when both descriptions consist entirely of short words", () => {
+    // tokenize filters out words with length <= 2, so these descriptions
+    // produce empty token sets. jaccard(empty, empty) returns 0 to avoid
+    // a divide-by-zero; 0 < 0.6 so no collision is emitted.
+    const a = mkSkill("/test/a/a.md", { name: "a", description: "do it in a" });
+    const b = mkSkill("/test/b/b.md", { name: "b", description: "do it in a" });
+    const ds = runChecks([a, b], config);
+    expect(ds.filter((d) => d.rule === "description-collision").length).toBe(0);
+  });
+
+  it("description-collision message includes the computed Jaccard score", () => {
+    const a = mkSkill("/test/a/a.md", { name: "a", description: "deploy the application to staging environment quickly" });
+    const b = mkSkill("/test/b/b.md", { name: "b", description: "deploy the application to staging environment faster" });
+    const ds = runChecks([a, b], config);
+    const d = ds.find((diag) => diag.rule === "description-collision" && diag.file === "/test/a/a.md");
+    expect(d?.message).toMatch(/Jaccard \d\.\d\d/);
+  });
 });
