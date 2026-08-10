@@ -75,6 +75,26 @@ describe("runChecks", () => {
     expect(ds.find((d) => d.rule === "tool-unknown")).toBeUndefined();
   });
 
+  it("does not flag ListAgents as an unknown tool", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      "allowed-tools": "ListAgents",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "tool-unknown")).toBeUndefined();
+  });
+
+  it("does not flag SendMessage as an unknown tool", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      "allowed-tools": "SendMessage",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "tool-unknown")).toBeUndefined();
+  });
+
   it("accepts scoped built-ins in allowed-tools", () => {
     const s = mkSkill("/test/foo/foo.md", {
       name: "foo",

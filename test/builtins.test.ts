@@ -16,6 +16,14 @@ describe("builtins", () => {
     expect(BUILTIN_TOOLS.has("SendUserFile")).toBe(true);
   });
 
+  it("BUILTIN_TOOLS includes ListAgents", () => {
+    expect(BUILTIN_TOOLS.has("ListAgents")).toBe(true);
+  });
+
+  it("BUILTIN_TOOLS includes SendMessage", () => {
+    expect(BUILTIN_TOOLS.has("SendMessage")).toBe(true);
+  });
+
   it("isMcpTool detects mcp__ prefix", () => {
     expect(isMcpTool("mcp__github__create_issue")).toBe(true);
     expect(isMcpTool("Read")).toBe(false);
