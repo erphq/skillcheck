@@ -77,6 +77,15 @@ export function runChecks(
   return diagnostics;
 }
 
+export function buildValidated(parsed: ParsedSkill[]): ValidatedSkill[] {
+  const out: ValidatedSkill[] = [];
+  for (const p of parsed) {
+    const v = toValidated(p);
+    if (v) out.push(v);
+  }
+  return out;
+}
+
 function toValidated(p: ParsedSkill): ValidatedSkill | null {
   const result = SkillFrontmatter.safeParse(p.frontmatter);
   if (!result.success) return null;
