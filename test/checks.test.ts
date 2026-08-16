@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { runChecks } from "../src/checks.js";
+import { runChecks, buildValidated } from "../src/checks.js";
 import { parseSkillContent } from "../src/parse.js";
 import { BUILTIN_TOOLS } from "../src/builtins.js";
 import type { SkillcheckConfig, ParsedSkill } from "../src/types.js";
@@ -1048,5 +1048,81 @@ describe("runChecks", () => {
     const ds = runChecks([a, b], config);
     const d = ds.find((diag) => diag.rule === "description-collision" && diag.file === "/test/a/a.md");
     expect(d?.message).toMatch(/Jaccard \d\.\d\d/);
+  });
+});
+
+describe("buildValidated", () => {
+  it("returns an empty array when given no skills", () => {
+    expect(buildValidated([])).toEqual([]);
+  });
+
+  it("excludes skills that fail schema validation", () => {
+    const s = mkSkill("/test/foo/SKILL.md", { name: "foo" });
+    expect(buildValidated([s])).toEqual([]);
+  });
+
+  it("includes tools from allowed-tools in the tools array", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      "allowed-tools": "Read Edit",
+    });
+    const vs = buildValidated([s]);
+    expect(vs[0]?.tools).toContain("Read");
+    expect(vs[0]?.tools).toContain("Edit");
+  });
+
+  it("includes tools from legacy tools field in the tools array", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      tools: ["Read", "Bash"],
+    });
+    const vs = buildValidated([s]);
+    expect(vs[0]?.tools).toContain("Read");
+    expect(vs[0]?.tools).toContain("Bash");
+  });
+
+  it("merges legacy tools and allowed-tools without duplicating shared entries", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      tools: ["Read", "Bash"],
+      "allowed-tools": "Read Edit",
+    });
+    const vs = buildValidated([s]);
+    expect(vs[0]?.tools.filter((t) => t === "Read").length).toBe(1);
+    expect(vs[0]?.tools).toContain("Bash");
+    expect(vs[0]?.tools).toContain("Edit");
+  });
+
+  it("returns an empty tools array when no tool fields are present", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+    });
+    const vs = buildValidated([s]);
+    expect(vs[0]?.tools).toEqual([]);
+  });
+
+  it("sets name and description from the frontmatter", () => {
+    const s = mkSkill("/test/my-skill/SKILL.md", {
+      name: "my-skill",
+      description: "does the thing",
+    });
+    const vs = buildValidated([s]);
+    expect(vs[0]?.name).toBe("my-skill");
+    expect(vs[0]?.description).toBe("does the thing");
+  });
+
+  it("skips invalid skills but still returns valid ones", () => {
+    const bad = mkSkill("/test/bad/SKILL.md", { name: "bad" });
+    const good = mkSkill("/test/good/SKILL.md", {
+      name: "good",
+      description: "a good skill",
+    });
+    const vs = buildValidated([bad, good]);
+    expect(vs).toHaveLength(1);
+    expect(vs[0]?.name).toBe("good");
   });
 });

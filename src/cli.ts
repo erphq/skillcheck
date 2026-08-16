@@ -2,17 +2,15 @@
 import { Command } from "commander";
 import fg from "fast-glob";
 import { parseSkillFile, ParseError } from "./parse.js";
-import { runChecks } from "./checks.js";
+import { runChecks, buildValidated } from "./checks.js";
 import { loadConfig } from "./config.js";
 import { reportText, reportJson } from "./report.js";
 import { reportSarif } from "./sarif.js";
 import { applyFixes } from "./fix.js";
 import { loadPlugins, runPlugins } from "./plugin.js";
-import { SkillFrontmatter } from "./schema.js";
 import type {
   Diagnostic,
   ParsedSkill,
-  ValidatedSkill,
 } from "./types.js";
 
 const VERSION = "0.6.0";
@@ -36,7 +34,7 @@ program
   .option("--format <fmt>", "output format: text | json | sarif", "text")
   .option(
     "--fix",
-    "apply safe auto-corrections in place (today: name-drift, tool-fields-ambiguous)",
+    "apply safe auto-corrections in place: name-drift, tool-fields-ambiguous, name-whitespace, deprecated-tools-field, tools-duplicate",
   )
   .option(
     "--fix-dry-run",
@@ -144,19 +142,4 @@ program.parseAsync(process.argv).catch((err: unknown) => {
 
 function collectPlugin(value: string, prev: string[]): string[] {
   return [...prev, value];
-}
-
-function buildValidated(parsed: ParsedSkill[]): ValidatedSkill[] {
-  const out: ValidatedSkill[] = [];
-  for (const p of parsed) {
-    const r = SkillFrontmatter.safeParse(p.frontmatter);
-    if (!r.success) continue;
-    out.push({
-      ...p,
-      name: r.data.name,
-      description: r.data.description,
-      tools: r.data.tools ?? [],
-    });
-  }
-  return out;
 }
