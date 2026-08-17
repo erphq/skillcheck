@@ -581,4 +581,24 @@ describe("applyFixes - tools-duplicate", () => {
     expect(outcome.notes[0]).toContain("tools-duplicate");
     expect(outcome.notes[0]).toContain("duplicate");
   });
+
+  it("counts all distinct-duplicate diagnostics as fixed when one rewrite resolves them all", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\nname: myskill\ndescription: A valid skill description\nallowed-tools: Read Edit Read Edit\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [
+        { severity: "warn", rule: "tools-duplicate", message: "tool 'Read' appears more than once in allowed-tools", file },
+        { severity: "warn", rule: "tools-duplicate", message: "tool 'Edit' appears more than once in allowed-tools", file },
+      ],
+    );
+    expect(outcome.fixed).toBe(2);
+    expect(outcome.skipped).toBe(0);
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("allowed-tools: Read Edit");
+    expect(written).not.toMatch(/Read Edit Read/);
+  });
 });
