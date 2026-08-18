@@ -163,15 +163,16 @@ function checkToolsDuplicate(p: ParsedSkill): Diagnostic[] {
   function warnDupes(tools: string[] | undefined, field: string): void {
     if (!tools || tools.length === 0) return;
     const seen = new Set<string>();
+    const warned = new Set<string>();
     for (const tool of tools) {
-      if (seen.has(tool)) {
+      if (seen.has(tool) && !warned.has(tool)) {
+        warned.add(tool);
         out.push({
           severity: "warn",
           rule: "tools-duplicate",
           message: `tool '${tool}' appears more than once in ${field}; remove the duplicate entry`,
           file: p.file,
         });
-        return;
       }
       seen.add(tool);
     }

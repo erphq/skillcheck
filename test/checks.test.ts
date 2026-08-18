@@ -847,6 +847,44 @@ describe("runChecks", () => {
     expect(ds.find((d) => d.rule === "tools-duplicate")).toBeUndefined();
   });
 
+  it("warns for each distinct duplicated tool when allowed-tools has multiple duplicates", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      "allowed-tools": "Read Edit Read Edit",
+    });
+    const ds = runChecks([s], config);
+    const dupes = ds.filter((d) => d.rule === "tools-duplicate");
+    expect(dupes.length).toBe(2);
+    expect(dupes.some((d) => d.message.includes("'Read'"))).toBe(true);
+    expect(dupes.some((d) => d.message.includes("'Edit'"))).toBe(true);
+  });
+
+  it("warns only once when a tool appears three or more times", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      "allowed-tools": "Read Read Read",
+    });
+    const ds = runChecks([s], config);
+    const dupes = ds.filter((d) => d.rule === "tools-duplicate");
+    expect(dupes.length).toBe(1);
+    expect(dupes[0]?.message).toContain("'Read'");
+  });
+
+  it("warns for each distinct duplicated tool in legacy tools array", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      tools: ["Read", "Edit", "Bash", "Edit", "Read"],
+    });
+    const ds = runChecks([s], config);
+    const dupes = ds.filter((d) => d.rule === "tools-duplicate");
+    expect(dupes.length).toBe(2);
+    expect(dupes.some((d) => d.message.includes("'Read'"))).toBe(true);
+    expect(dupes.some((d) => d.message.includes("'Edit'"))).toBe(true);
+  });
+
   it("warns when only the legacy tools: field is used without allowed-tools:", () => {
     const s = mkSkill("/test/foo/SKILL.md", {
       name: "foo",

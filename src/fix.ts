@@ -61,6 +61,11 @@ export async function applyFixes(
   const notes: string[] = [];
   let fixed = 0;
   let skipped = 0;
+  // The tools-duplicate dedup fixer removes all duplicates in one pass,
+  // so the second (and any further) diagnostics for the same file are
+  // already resolved by the time they are processed. Track files that
+  // have already been deduped so subsequent diagnostics count as fixed.
+  const toolsDuplicateDeduped = new Set<string>();
 
   for (const d of diagnostics) {
     if (d.rule === "name-drift") {
@@ -140,6 +145,10 @@ export async function applyFixes(
         skipped++;
         continue;
       }
+      if (toolsDuplicateDeduped.has(d.file)) {
+        fixed++;
+        continue;
+      }
       const current = buffer.get(p.file) ?? p.raw;
       const next = rewriteDeduplicateTools(current);
       if (next === current) {
@@ -147,6 +156,7 @@ export async function applyFixes(
         continue;
       }
       buffer.set(p.file, next);
+      toolsDuplicateDeduped.add(d.file);
       fixed++;
       notes.push(`${p.file}: tools-duplicate -> removed duplicate tool entries`);
     } else {
