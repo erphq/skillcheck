@@ -601,4 +601,76 @@ describe("applyFixes - tools-duplicate", () => {
     expect(written).toContain("allowed-tools: Read Edit");
     expect(written).not.toMatch(/Read Edit Read/);
   });
+
+  it("removes a duplicate from a comma-separated tools: inline string", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\nname: myskill\ndescription: A valid skill description\ntools: Read, Edit, Read\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "tools-duplicate", message: "tool 'Read' appears more than once in tools", file }],
+    );
+    expect(outcome.fixed).toBe(1);
+    expect(outcome.skipped).toBe(0);
+    expect(outcome.filesChanged).toEqual([file]);
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("tools: Read, Edit");
+    expect(written).not.toMatch(/Read, Edit, Read/);
+  });
+
+  it("removes a duplicate from a comma-separated allowed-tools: string", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\nname: myskill\ndescription: A valid skill description\nallowed-tools: Read, Bash, Read\n---\nbody\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "tools-duplicate", message: "tool 'Read' appears more than once in allowed-tools", file }],
+    );
+    expect(outcome.fixed).toBe(1);
+    expect(outcome.filesChanged).toEqual([file]);
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("allowed-tools: Read, Bash");
+    expect(written).not.toMatch(/Read, Bash, Read/);
+  });
+});
+
+describe("applyFixes - CRLF handling", () => {
+  it("renames tools: to allowed-tools: in a CRLF file", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\r\nname: myskill\r\ndescription: a good description here\r\ntools:\r\n  - Read\r\n---\r\nbody\r\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "deprecated-tools-field", message: "", file }],
+    );
+    expect(outcome.fixed).toBe(1);
+    expect(outcome.skipped).toBe(0);
+    const written = await readFile(file, "utf8");
+    expect(written).toContain("allowed-tools:");
+    expect(written).not.toMatch(/^tools[ \t]*:/m);
+  });
+
+  it("removes legacy tools: in a CRLF file when allowed-tools: is also present", async () => {
+    const file = await writeSkill(
+      "myskill/SKILL.md",
+      `---\r\nname: myskill\r\ndescription: a good description here\r\ntools:\r\n  - Read\r\nallowed-tools:\r\n  - Read\r\n---\r\nbody\r\n`,
+    );
+    const parsed = await parseSkillFile(file);
+    const outcome = await applyFixes(
+      [parsed],
+      [{ severity: "warn", rule: "tool-fields-ambiguous", message: "", file }],
+    );
+    expect(outcome.fixed).toBe(1);
+    expect(outcome.skipped).toBe(0);
+    const written = await readFile(file, "utf8");
+    expect(written).not.toMatch(/^tools[ \t]*:/m);
+    expect(written).toContain("allowed-tools:");
+    expect(written).toContain("  - Read");
+  });
 });
