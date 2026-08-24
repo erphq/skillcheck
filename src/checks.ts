@@ -66,7 +66,6 @@ export function runChecks(
     diagnostics.push(...checkDescriptionLength(v));
     diagnostics.push(...checkDescriptionTooShort(v));
     diagnostics.push(...checkNameDrift(v));
-    diagnostics.push(...checkNameWhitespace(v));
     diagnostics.push(...checkEmptyBody(v));
     diagnostics.push(...checkModelUnknown(v));
     diagnostics.push(...checkEffortUnknown(v));
@@ -299,19 +298,6 @@ function checkNameDrift(v: ValidatedSkill): Diagnostic[] {
   ];
 }
 
-function checkNameWhitespace(v: ValidatedSkill): Diagnostic[] {
-  if (/\s/.test(v.name)) {
-    return [
-      {
-        severity: "warn",
-        rule: "name-whitespace",
-        message: `skill name '${v.name}' contains whitespace; use hyphens or underscores as word separators`,
-        file: v.file,
-      },
-    ];
-  }
-  return [];
-}
 
 function checkModelUnknown(v: ValidatedSkill): Diagnostic[] {
   const model = v.frontmatter.model;

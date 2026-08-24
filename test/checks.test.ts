@@ -1087,6 +1087,33 @@ describe("runChecks", () => {
     const d = ds.find((diag) => diag.rule === "description-collision" && diag.file === "/test/a/a.md");
     expect(d?.message).toMatch(/Jaccard \d\.\d\d/);
   });
+
+  it("description-collision fires for two skills with identical descriptions (Jaccard = 1.0)", () => {
+    const a = mkSkill("/test/a/a.md", { name: "a", description: "deploy the application to staging environment" });
+    const b = mkSkill("/test/b/b.md", { name: "b", description: "deploy the application to staging environment" });
+    const ds = runChecks([a, b], config);
+    expect(ds.filter((d) => d.rule === "description-collision").length).toBe(2);
+    const d = ds.find((diag) => diag.rule === "description-collision" && diag.file === "/test/a/a.md");
+    expect(d?.message).toContain("1.00");
+  });
+
+  it("tokenizer treats punctuation as whitespace so hyphenated phrases share tokens with space-separated ones", () => {
+    // "deploy-the-application" tokenizes identically to "deploy the application"
+    // because non-alphanumeric chars are replaced with spaces before splitting.
+    const a = mkSkill("/test/a/a.md", { name: "a", description: "deploy-the-application to staging environment" });
+    const b = mkSkill("/test/b/b.md", { name: "b", description: "deploy the application to staging environment" });
+    const ds = runChecks([a, b], config);
+    expect(ds.filter((d) => d.rule === "description-collision").length).toBe(2);
+  });
+
+  it("three-character words count toward Jaccard scoring", () => {
+    // "foo bar baz" produces exactly three 3-char tokens; two skills sharing
+    // all three tokens have Jaccard 1.0 and must collide.
+    const a = mkSkill("/test/a/a.md", { name: "a", description: "foo bar baz" });
+    const b = mkSkill("/test/b/b.md", { name: "b", description: "foo bar baz" });
+    const ds = runChecks([a, b], config);
+    expect(ds.filter((d) => d.rule === "description-collision").length).toBe(2);
+  });
 });
 
 describe("buildValidated", () => {
