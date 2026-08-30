@@ -116,6 +116,14 @@ export const RULES: readonly SarifRule[] = [
     defaultLevel: "warning",
   },
   {
+    id: "deprecated-tools-field",
+    name: "deprecatedToolsField",
+    shortDescription:
+      "The legacy tools: field is used; migrate to allowed-tools: which is the spec-supported tool allowlist.",
+    helpUri: HELP_BASE,
+    defaultLevel: "warning",
+  },
+  {
     id: "tools-duplicate",
     name: "toolsDuplicate",
     shortDescription:
