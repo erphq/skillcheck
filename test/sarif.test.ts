@@ -179,4 +179,40 @@ describe("reportSarif", () => {
     expect(rule.id).toBe("name-whitespace");
     expect(rule.name).toBe("nameWhitespace");
   });
+
+  it("deprecated-tools-field appears in the catalog with a proper camelCase name", () => {
+    const out = JSON.parse(reportSarif([], "/test", opts));
+    const rule = out.runs[0].tool.driver.rules.find(
+      (r: { id: string }) => r.id === "deprecated-tools-field",
+    );
+    expect(rule).toBeDefined();
+    expect(rule.name).toBe("deprecatedToolsField");
+    expect(rule.defaultConfiguration.level).toBe("warning");
+    expect(rule.shortDescription.text).not.toBe("deprecated-tools-field");
+  });
+
+  it("ruleIndex for deprecated-tools-field points to the registered entry, not a fallback", () => {
+    const diagnostics: Diagnostic[] = [
+      {
+        severity: "warn",
+        rule: "deprecated-tools-field",
+        message: "tools: is a legacy field; migrate to allowed-tools:",
+        file: "/test/a.md",
+      },
+    ];
+    const out = JSON.parse(reportSarif(diagnostics, "/test", opts));
+    const idx = out.runs[0].results[0].ruleIndex;
+    const rule = out.runs[0].tool.driver.rules[idx];
+    expect(rule.id).toBe("deprecated-tools-field");
+    expect(rule.name).toBe("deprecatedToolsField");
+    expect(rule.shortDescription.text).not.toBe("deprecated-tools-field");
+  });
+
+  it("deprecated-tools-field shortDescription mentions allowed-tools:", () => {
+    const out = JSON.parse(reportSarif([], "/test", opts));
+    const rule = out.runs[0].tool.driver.rules.find(
+      (r: { id: string }) => r.id === "deprecated-tools-field",
+    );
+    expect(rule.shortDescription.text).toContain("allowed-tools:");
+  });
 });
