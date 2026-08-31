@@ -41,6 +41,11 @@ const KNOWN_EFFORT_LEVELS: ReadonlySet<string> = new Set([
   "max",
 ]);
 
+// Regional prefixes used by cross-region inference endpoints (Bedrock, Vertex).
+// Strip these before looking up in KNOWN_CLAUDE_MODELS so that IDs like
+// `us.claude-sonnet-4-6` are recognised without enumerating every combination.
+const REGIONAL_PREFIXES: ReadonlyArray<string> = ["us.", "eu.", "ap."];
+
 export function runChecks(
   parsed: ParsedSkill[],
   config: SkillcheckConfig,
@@ -298,12 +303,19 @@ function checkNameDrift(v: ValidatedSkill): Diagnostic[] {
   ];
 }
 
+function stripRegionalPrefix(model: string): string {
+  for (const prefix of REGIONAL_PREFIXES) {
+    if (model.startsWith(prefix)) return model.slice(prefix.length);
+  }
+  return model;
+}
 
 function checkModelUnknown(v: ValidatedSkill): Diagnostic[] {
   const model = v.frontmatter.model;
   if (model === undefined) return [];
   if (typeof model !== "string" || model.length === 0) return [];
   if (KNOWN_CLAUDE_MODELS.has(model)) return [];
+  if (KNOWN_CLAUDE_MODELS.has(stripRegionalPrefix(model))) return [];
   return [
     {
       severity: "warn",
