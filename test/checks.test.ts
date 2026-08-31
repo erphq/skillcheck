@@ -1114,6 +1114,57 @@ describe("runChecks", () => {
     const ds = runChecks([a, b], config);
     expect(ds.filter((d) => d.rule === "description-collision").length).toBe(2);
   });
+
+  it("does not warn model-unknown for us. prefixed Bedrock model when base is known", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      model: "us.claude-sonnet-4-6",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "model-unknown")).toBeUndefined();
+  });
+
+  it("does not warn model-unknown for eu. prefixed Bedrock model when base is known", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      model: "eu.claude-opus-5",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "model-unknown")).toBeUndefined();
+  });
+
+  it("does not warn model-unknown for ap. prefixed Bedrock model when base is known", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      model: "ap.claude-fable-5",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "model-unknown")).toBeUndefined();
+  });
+
+  it("still warns model-unknown when a regional prefix precedes an unrecognised base model", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      model: "us.claude-fable-6",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.some((d) => d.rule === "model-unknown")).toBe(true);
+  });
+
+  it("model-unknown message includes the full prefixed model id when regional prefix is used", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      model: "us.claude-fable-6",
+    });
+    const ds = runChecks([s], config);
+    const d = ds.find((d) => d.rule === "model-unknown");
+    expect(d?.message).toContain("us.claude-fable-6");
+  });
 });
 
 describe("buildValidated", () => {
