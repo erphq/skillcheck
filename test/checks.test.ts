@@ -1165,6 +1165,26 @@ describe("runChecks", () => {
     const d = ds.find((d) => d.rule === "model-unknown");
     expect(d?.message).toContain("us.claude-fable-6");
   });
+
+  it("does not flag ReadNotifications as an unknown tool", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      "allowed-tools": "ReadNotifications Read",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "tool-unknown")).toBeUndefined();
+  });
+
+  it("does not flag Workflow as an unknown tool", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      "allowed-tools": "Workflow",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "tool-unknown")).toBeUndefined();
+  });
 });
 
 describe("buildValidated", () => {

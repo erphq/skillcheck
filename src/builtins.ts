@@ -21,6 +21,7 @@ export const BUILTIN_TOOLS: ReadonlySet<string> = new Set([
   "NotebookEdit",
   "PushNotification",
   "Read",
+  "ReadNotifications",
   "RemoteTrigger",
   "ScheduleWakeup",
   "SendMessage",
@@ -37,6 +38,7 @@ export const BUILTIN_TOOLS: ReadonlySet<string> = new Set([
   "ToolSearch",
   "WebFetch",
   "WebSearch",
+  "Workflow",
   "Write",
 ]);
 

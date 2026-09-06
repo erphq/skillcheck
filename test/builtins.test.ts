@@ -24,6 +24,14 @@ describe("builtins", () => {
     expect(BUILTIN_TOOLS.has("SendMessage")).toBe(true);
   });
 
+  it("BUILTIN_TOOLS includes ReadNotifications", () => {
+    expect(BUILTIN_TOOLS.has("ReadNotifications")).toBe(true);
+  });
+
+  it("BUILTIN_TOOLS includes Workflow", () => {
+    expect(BUILTIN_TOOLS.has("Workflow")).toBe(true);
+  });
+
   it("isMcpTool detects mcp__ prefix", () => {
     expect(isMcpTool("mcp__github__create_issue")).toBe(true);
     expect(isMcpTool("Read")).toBe(false);
