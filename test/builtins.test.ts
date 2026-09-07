@@ -32,6 +32,10 @@ describe("builtins", () => {
     expect(BUILTIN_TOOLS.has("Workflow")).toBe(true);
   });
 
+  it("BUILTIN_TOOLS includes ReportFindings", () => {
+    expect(BUILTIN_TOOLS.has("ReportFindings")).toBe(true);
+  });
+
   it("isMcpTool detects mcp__ prefix", () => {
     expect(isMcpTool("mcp__github__create_issue")).toBe(true);
     expect(isMcpTool("Read")).toBe(false);
