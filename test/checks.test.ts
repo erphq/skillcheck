@@ -1185,6 +1185,16 @@ describe("runChecks", () => {
     const ds = runChecks([s], config);
     expect(ds.find((d) => d.rule === "tool-unknown")).toBeUndefined();
   });
+
+  it("does not flag ReportFindings as an unknown tool", () => {
+    const s = mkSkill("/test/foo/SKILL.md", {
+      name: "foo",
+      description: "do the foo thing",
+      "allowed-tools": "ReportFindings Read",
+    });
+    const ds = runChecks([s], config);
+    expect(ds.find((d) => d.rule === "tool-unknown")).toBeUndefined();
+  });
 });
 
 describe("buildValidated", () => {

@@ -23,6 +23,7 @@ export const BUILTIN_TOOLS: ReadonlySet<string> = new Set([
   "Read",
   "ReadNotifications",
   "RemoteTrigger",
+  "ReportFindings",
   "ScheduleWakeup",
   "SendMessage",
   "SendUserFile",
